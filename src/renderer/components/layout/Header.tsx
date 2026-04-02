@@ -52,7 +52,7 @@ export function Header() {
             <Button
               variant="ghost"
               onClick={toggleTheme}
-              className="h-6 w-6 rounded-md p-0 text-dark-400 hover:text-white"
+              className="h-6 w-6 rounded-md !p-0 text-dark-400 hover:text-white"
               title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
             >
               {theme === 'dark' ? (
@@ -78,7 +78,7 @@ export function Header() {
           <Button
             variant="ghost"
             onClick={toggleTheme}
-            className="mr-2 h-6 w-6 rounded-md p-0 text-dark-400 hover:text-white"
+            className="mr-2 h-6 w-6 rounded-md !p-0 text-dark-400 hover:text-white"
             title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
           >
             {theme === 'dark' ? (
@@ -92,16 +92,18 @@ export function Header() {
         {/* Windows/Linux：窗口控制按钮 */}
         {!isMac && (
           <div className="flex items-center">
-            <button
+            <Button
+              variant="ghost"
               onClick={handleMinimize}
-              className="inline-flex h-9 w-11 items-center justify-center text-dark-400 transition-colors hover:bg-dark-700/50 hover:text-white"
+              className="h-9 w-11 rounded-none !p-0 text-dark-400 hover:bg-dark-700/50 hover:text-white"
               title="最小化"
             >
               <Minus className="h-4 w-4" />
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
               onClick={handleMaximize}
-              className="inline-flex h-9 w-11 items-center justify-center text-dark-400 transition-colors hover:bg-dark-700/50 hover:text-white"
+              className="h-9 w-11 rounded-none !p-0 text-dark-400 hover:bg-dark-700/50 hover:text-white"
               title={isMaximized ? '还原' : '最大化'}
             >
               {isMaximized ? (
@@ -118,14 +120,15 @@ export function Header() {
               ) : (
                 <Square className="h-3.5 w-3.5" />
               )}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="ghost"
               onClick={handleClose}
-              className="inline-flex h-9 w-11 items-center justify-center text-dark-400 transition-colors hover:bg-red-500 hover:text-white"
+              className="h-9 w-11 rounded-none !p-0 text-dark-400 hover:bg-red-500 hover:text-white"
               title="关闭"
             >
               <X className="h-4 w-4" />
-            </button>
+            </Button>
           </div>
         )}
       </div>

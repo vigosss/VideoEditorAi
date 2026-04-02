@@ -31,24 +31,48 @@ export function Sidebar() {
       className="relative flex h-full flex-col border-r border-dark-700/50 bg-dark-900/80 backdrop-blur-md"
     >
       {/* Logo 区域 */}
-      <div className="flex h-16 items-center gap-3 px-4">
+      <div
+        className={clsx(
+          'flex items-center px-4',
+          sidebarCollapsed ? 'h-20 flex-col justify-center gap-2' : 'h-16 gap-3',
+        )}
+      >
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary-500 to-accent-500">
           <Scissors className="h-5 w-5 text-white" />
         </div>
-        {!sidebarCollapsed && (
-          <motion.span
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-lg font-bold text-transparent"
+        {!sidebarCollapsed ? (
+          <>
+            <motion.span
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-lg font-bold text-transparent"
+            >
+              老兵AI智剪
+            </motion.span>
+            <div className="ml-auto">
+              <Button
+                variant="ghost"
+                onClick={toggleSidebar}
+                className="h-7 w-7 rounded-md !p-0 text-dark-400 hover:bg-dark-800 hover:text-white"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        ) : (
+          <Button
+            variant="ghost"
+            onClick={toggleSidebar}
+            className="h-7 w-7 rounded-md !p-0 text-dark-400 hover:bg-dark-800 hover:text-white"
           >
-            老兵AI智剪
-          </motion.span>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         )}
       </div>
 
       {/* 导航列表 */}
-      <nav className="mt-4 flex flex-1 flex-col gap-1 px-3">
+      <nav className="mt-2 flex flex-1 flex-col gap-1 px-3">
         {navItems.map(({ to, icon: Icon, label }) => (
           <NavLink
             key={to}
@@ -86,18 +110,6 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* 折叠按钮 */}
-      <Button
-        variant="ghost"
-        onClick={toggleSidebar}
-        className="absolute -right-3 top-20 flex h-6 w-6 items-center justify-center rounded-full border border-dark-700 bg-dark-800 p-0 text-dark-400 hover:bg-dark-700 hover:text-white"
-      >
-        {sidebarCollapsed ? (
-          <ChevronRight className="h-3 w-3" />
-        ) : (
-          <ChevronLeft className="h-3 w-3" />
-        )}
-      </Button>
     </motion.aside>
   )
 }
