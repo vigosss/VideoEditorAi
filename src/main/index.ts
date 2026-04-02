@@ -1,8 +1,10 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
 function createWindow(): BrowserWindow {
+  const isMac = process.platform === 'darwin'
+
   const mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
@@ -10,8 +12,10 @@ function createWindow(): BrowserWindow {
     minHeight: 600,
     show: false,
     autoHideMenuBar: true,
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 16, y: 18 },
+    // macOS 使用隐藏原生标题栏（保留红绿灯按钮），Windows/Linux 无边框
+    titleBarStyle: isMac ? 'hiddenInset' : undefined,
+    frame: !isMac,
+    trafficLightPosition: isMac ? { x: 16, y: 16 } : undefined,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -19,6 +23,14 @@ function createWindow(): BrowserWindow {
       nodeIntegration: false,
     },
   })
+
+  // 窗口控制 IPC
+  ipcMain.handle('window:minimize', () => mainWindow.minimize())
+  ipcMain.handle('window:maximize', () => {
+    mainWindow.isMaximized() ? mainWindow.unmaximize() : mainWindow.maximize()
+  })
+  ipcMain.handle('window:close', () => mainWindow.close())
+  ipcMain.handle('window:isMaximized', () => mainWindow.isMaximized())
 
   mainWindow.on('ready-to-show', () => {
     mainWindow.show()
@@ -31,8 +43,9 @@ function createWindow(): BrowserWindow {
   })
 
   // 开发环境加载 dev server，生产环境加载打包文件
-  if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+  if (is.dev) {
+    const devServerUrl = process.env['ELECTRON_RENDERER_URL'] || 'http://localhost:5173'
+    mainWindow.loadURL(devServerUrl)
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }

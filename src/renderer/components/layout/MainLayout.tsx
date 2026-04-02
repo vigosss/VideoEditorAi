@@ -7,14 +7,14 @@ export function MainLayout() {
   const { theme } = useAppStore()
 
   return (
-    <div className={`${theme} flex h-screen overflow-hidden`}>
-      {/* 侧边栏 */}
-      <Sidebar />
+    <div className={`${theme} flex h-screen flex-col overflow-hidden`}>
+      {/* 顶部标题栏（横跨全宽） */}
+      <Header />
 
-      {/* 主内容区 */}
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {/* 顶部栏 */}
-        <Header />
+      {/* 下方：侧边栏 + 主内容区 */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* 侧边栏 */}
+        <Sidebar />
 
         {/* 页面内容 */}
         <main className="flex-1 overflow-y-auto p-6">

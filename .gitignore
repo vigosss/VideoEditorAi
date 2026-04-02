@@ -7,7 +7,6 @@ dist-electron/
 out/
 
 # IDE
-.vscode/
 .idea/
 *.swp
 *.swo

@@ -38,6 +38,15 @@ const api: ElectronAPI = {
   // 对话框
   openFileDialog: (filters) => ipcRenderer.invoke('dialog:openFile', filters),
   openDirectoryDialog: () => ipcRenderer.invoke('dialog:openDirectory'),
+
+  // 平台信息
+  platform: process.platform,
+
+  // 窗口控制
+  windowMinimize: () => ipcRenderer.invoke('window:minimize'),
+  windowMaximize: () => ipcRenderer.invoke('window:maximize'),
+  windowClose: () => ipcRenderer.invoke('window:close'),
+  windowIsMaximized: () => ipcRenderer.invoke('window:isMaximized'),
 }
 
 // 通过 contextBridge 安全地暴露 API 给渲染进程

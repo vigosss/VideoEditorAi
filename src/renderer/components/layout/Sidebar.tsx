@@ -28,7 +28,7 @@ export function Sidebar() {
       initial={false}
       animate={{ width: sidebarCollapsed ? 72 : 220 }}
       transition={{ duration: 0.2, ease: 'easeInOut' }}
-      className="relative flex h-screen flex-col border-r border-dark-700/50 bg-dark-900/80 backdrop-blur-md"
+      className="relative flex h-full flex-col border-r border-dark-700/50 bg-dark-900/80 backdrop-blur-md"
     >
       {/* Logo 区域 */}
       <div className="flex h-16 items-center gap-3 px-4">

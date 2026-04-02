@@ -1,0 +1,71 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run App (No Debug)",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "${workspaceFolder}",
+      "noDebug": true,
+      "console": "integratedTerminal",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new"
+      }
+    },
+    {
+      "name": "Debug Electron Main",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "runtimeArgs": ["."],
+      "env": {
+        "VSCODE_DEBUG": "true"
+      },
+      "preLaunchTask": "Start Vite Dev",
+      "outputCapture": "std",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ]
+    },
+    {
+      "name": "Debug Electron Renderer",
+      "type": "chrome",
+      "request": "attach",
+      "port": 9222,
+      "cwd": "${workspaceFolder}",
+      "urlFilter": "http://localhost:*",
+      "webRoot": "${workspaceFolder}/src/renderer",
+      "sourceMapPathOverrides": {
+        "webpack:///./src/*": "${webRoot}/*"
+      },
+      "preLaunchTask": "Start Vite Dev"
+    },
+    {
+      "name": "Debug Electron (Main + Renderer)",
+      "type": "node",
+      "request": "launch",
+      "cwd": "${workspaceFolder}",
+      "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/electron",
+      "runtimeArgs": ["--remote-debugging-port=9222", "."],
+      "env": {
+        "VSCODE_DEBUG": "true"
+      },
+      "preLaunchTask": "Start Vite Dev",
+      "outputCapture": "std",
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "serverReadyAction": {
+        "pattern": "Debugger listening on",
+        "uriFormat": "http://localhost:9222",
+        "action": "debugWithChrome"
+      }
+    }
+  ]
+}

@@ -40,4 +40,13 @@ export interface ElectronAPI {
   // 对话框
   openFileDialog: (filters?: FileFilter[]) => Promise<string | null>
   openDirectoryDialog: () => Promise<string | null>
+
+  // 平台信息
+  platform: string
+
+  // 窗口控制
+  windowMinimize: () => Promise<void>
+  windowMaximize: () => Promise<void>
+  windowClose: () => Promise<void>
+  windowIsMaximized: () => Promise<boolean>
 }
