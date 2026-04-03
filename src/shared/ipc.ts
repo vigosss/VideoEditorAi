@@ -10,6 +10,7 @@ export const IPC_CHANNELS = {
   PROJECT_GET: 'project:get',
   PROJECT_DELETE: 'project:delete',
   PROJECT_UPDATE: 'project:update',
+  PROJECT_GET_CLIPS: 'project:getClips',
 
   // 视频处理
   VIDEO_GET_INFO: 'video:getInfo',

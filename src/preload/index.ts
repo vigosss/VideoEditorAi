@@ -8,6 +8,7 @@ const api: ElectronAPI = {
   getProject: (id) => ipcRenderer.invoke('project:get', id),
   deleteProject: (id) => ipcRenderer.invoke('project:delete', id),
   updateProject: (id, data) => ipcRenderer.invoke('project:update', id, data),
+  getProjectClips: (projectId) => ipcRenderer.invoke('project:getClips', projectId),
 
   // 视频处理
   getVideoInfo: (filePath) => ipcRenderer.invoke('video:getInfo', filePath),

@@ -6,6 +6,7 @@ import {
   getProject,
   updateProject,
   deleteProject,
+  getClipsByProject,
 } from '../services/database'
 import type { CreateProjectParams, Project } from '../../shared/project'
 
@@ -49,6 +50,14 @@ export function registerProjectIPC(): void {
       throw new Error('项目 ID 不能为空')
     }
     deleteProject(id)
+  })
+
+  // 获取项目的剪辑片段
+  ipcMain.handle(IPC_CHANNELS.PROJECT_GET_CLIPS, async (_event, projectId: string) => {
+    if (!projectId) {
+      throw new Error('项目 ID 不能为空')
+    }
+    return getClipsByProject(projectId)
   })
 
   console.log('[ipc] 项目 IPC 处理器已注册')

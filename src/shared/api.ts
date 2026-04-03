@@ -3,6 +3,7 @@
 // ==========================================
 
 import type { Project, CreateProjectParams } from './project'
+import type { Clip } from './clip'
 import type { VideoInfo } from './video'
 import type { PipelineProgress } from './pipeline'
 import type { AppSettings } from './settings'
@@ -22,6 +23,7 @@ export interface ElectronAPI {
   getProject: (id: string) => Promise<Project | null>
   deleteProject: (id: string) => Promise<void>
   updateProject: (id: string, data: Partial<Project>) => Promise<Project>
+  getProjectClips: (projectId: string) => Promise<Clip[]>
 
   // 视频处理
   getVideoInfo: (filePath: string) => Promise<VideoInfo>
