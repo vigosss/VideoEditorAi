@@ -5,7 +5,7 @@
       "name": "Run App (No Debug)",
       "type": "node",
       "request": "launch",
-      "runtimeExecutable": "npm",
+      "runtimeExecutable": "yarn",
       "runtimeArgs": ["run", "dev"],
       "cwd": "${workspaceFolder}",
       "noDebug": true,

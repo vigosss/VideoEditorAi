@@ -1,6 +1,8 @@
 import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+import { initDatabase, closeDatabase } from './services/database'
+import { registerAllIPC } from './ipc'
 
 function createWindow(): BrowserWindow {
   const isMac = process.platform === 'darwin'
@@ -57,6 +59,12 @@ app.whenReady().then(() => {
   // 设置应用用户模型 ID（Windows）
   electronApp.setAppUserModelId('com.vigosss.video-editor-ai')
 
+  // 初始化数据库
+  initDatabase()
+
+  // 注册所有 IPC 处理器
+  registerAllIPC()
+
   // macOS 点击 dock 图标时重新创建窗口
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
@@ -72,6 +80,13 @@ app.whenReady().then(() => {
 // 所有窗口关闭时退出应用（Windows/Linux）
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
+    // 关闭数据库连接
+    closeDatabase()
     app.quit()
   }
+})
+
+// 应用退出前关闭数据库
+app.on('before-quit', () => {
+  closeDatabase()
 })

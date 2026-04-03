@@ -4,11 +4,12 @@
   "description": "老兵AI智剪 - AI驱动的智能视频剪辑桌面应用",
   "main": "dist-electron/main/index.js",
   "scripts": {
+    "postinstall": "electron-rebuild -f -o better-sqlite3",
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "package": "npm run build && electron-builder --dir",
-    "dist": "npm run build && electron-builder",
+    "package": "yarn run build && electron-builder --dir",
+    "dist": "yarn run build && electron-builder",
     "lint": "eslint . --ext .ts,.tsx",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\""
   },
@@ -26,6 +27,7 @@
     "zustand": "^5.0.0"
   },
   "devDependencies": {
+    "@electron/rebuild": "^3.6.0",
     "@types/better-sqlite3": "^7.6.8",
     "@types/fluent-ffmpeg": "^2.1.27",
     "@types/node": "^22.9.0",
