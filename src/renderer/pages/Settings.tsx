@@ -12,15 +12,19 @@ import {
   Eye,
   EyeOff,
   Loader2,
+  ChevronDown,
+  ChevronUp,
+  RotateCcw,
 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
 import { Select } from '../components/ui/Select'
 import { Card } from '../components/ui/Card'
+import CodeEditor from '@uiw/react-textarea-code-editor'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useAppStore } from '../stores/appStore'
 import type { GLMModel, AnalysisMode, WhisperModelSize, OutputFormat, Resolution } from '@shared/types'
-import { MODEL_OPTIONS, ANALYSIS_MODE_OPTIONS } from '@shared/constants'
+import { MODEL_OPTIONS, ANALYSIS_MODE_OPTIONS, DEFAULT_SYSTEM_PROMPT } from '@shared/constants'
 
 const WHISPER_MODEL_OPTIONS = [
   { value: 'tiny', label: 'Tiny（最快，精度较低）' },
@@ -46,6 +50,7 @@ export default function Settings() {
   const { setTheme } = useAppStore()
   const [saving, setSaving] = useState(false)
   const [showApiKey, setShowApiKey] = useState(false)
+  const [showAdvanced, setShowAdvanced] = useState(false)
   const [localSettings, setLocalSettings] = useState(settings)
 
   useEffect(() => {
@@ -185,6 +190,52 @@ export default function Settings() {
             <FolderOpen className="h-4 w-4" />
           </Button>
         </div>
+      </Card>
+
+      {/* 高级设置：系统提示词 */}
+      <Card title="高级设置" description="自定义 AI 分析行为（高级用户）">
+        <button
+          type="button"
+          onClick={() => setShowAdvanced(!showAdvanced)}
+          className="flex items-center gap-2 text-sm"
+          style={{ color: 'var(--text-secondary)' }}
+        >
+          {showAdvanced ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          系统提示词
+        </button>
+
+        {showAdvanced && (
+          <div className="mt-4 space-y-3">
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              ⚠️ 请勿删除 JSON 输出格式要求，否则程序无法正确解析 AI 分析结果。
+            </p>
+            <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'var(--border)' }}>
+              <CodeEditor
+                value={localSettings.systemPrompt}
+                language="markdown"
+                onChange={(e) => updateLocal('systemPrompt', e.target.value)}
+                placeholder="请输入系统提示词..."
+                padding={16}
+                style={{
+                  fontSize: 13,
+                  fontFamily: 'ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace',
+                  minHeight: 320,
+                  lineHeight: 1.6,
+                }}
+              />
+            </div>
+            <div className="flex justify-end">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => updateLocal('systemPrompt', DEFAULT_SYSTEM_PROMPT)}
+              >
+                <RotateCcw className="h-3 w-3" />
+                恢复默认
+              </Button>
+            </div>
+          </div>
+        )}
       </Card>
 
       {/* 保存按钮 */}

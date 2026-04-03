@@ -2,6 +2,7 @@ import Database from 'better-sqlite3'
 import { randomUUID } from 'crypto'
 import { getDatabasePath, getProjectsDir } from '../utils/paths'
 import { encrypt, decrypt } from '../utils/crypto'
+import { DEFAULT_SYSTEM_PROMPT } from '../../shared/constants'
 import type { Project, CreateProjectParams, ProjectStatus, ProcessingStep } from '../../shared/project'
 import type { Clip } from '../../shared/clip'
 import type { UploadRecord, UploadPlatform, UploadStatus } from '../../shared/upload'
@@ -319,6 +320,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   glmApiKey: '',
   defaultModel: 'GLM-4.6V-FlashX',
   defaultAnalysisMode: 'standard',
+  systemPrompt: DEFAULT_SYSTEM_PROMPT,
   whisperModel: 'base',
   outputFormat: 'mp4',
   outputResolution: '1080p',

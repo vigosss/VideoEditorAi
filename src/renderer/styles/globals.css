@@ -196,3 +196,96 @@
     animation: pulse-glow 2s ease-in-out infinite;
   }
 }
+
+/* ===== CodeEditor Markdown 语法高亮（放在 @layer 外确保高优先级）===== */
+.w-tc-editor {
+  color: var(--text-primary) !important;
+  background-color: var(--bg-tertiary) !important;
+}
+
+.w-tc-editor pre {
+  color: var(--text-primary) !important;
+  background-color: transparent !important;
+}
+
+/* textarea 透明，让底层 Prism 高亮层可见 */
+.w-tc-editor textarea {
+  color: transparent !important;
+  caret-color: var(--color-primary) !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* 所有 token 基础文字颜色 */
+.w-tc-editor .token,
+.w-tc-editor span[class*="token"] {
+  color: var(--text-primary) !important;
+}
+
+/* Markdown 标题 ### */
+.w-tc-editor .token.title,
+.w-tc-editor .token.heading,
+.w-tc-editor .token.atx {
+  color: var(--color-primary) !important;
+  font-weight: 700 !important;
+}
+
+/* Markdown 粗体 **text** */
+.w-tc-editor .token.bold,
+.w-tc-editor .token.strong,
+.w-tc-editor span.bold,
+.w-tc-editor span.strong {
+  color: var(--color-primary) !important;
+  font-weight: 700 !important;
+}
+
+/* Markdown 斜体 *text* */
+.w-tc-editor .token.italic,
+.w-tc-editor .token.emphasis,
+.w-tc-editor span.italic {
+  color: var(--color-accent) !important;
+  font-style: italic !important;
+}
+
+/* Markdown 列表 - / 1. 2. */
+.w-tc-editor .token.list,
+.w-tc-editor span.list {
+  color: var(--color-primary) !important;
+}
+
+/* Markdown 代码块 */
+.w-tc-editor .token.code,
+.w-tc-editor .token.code-block,
+.w-tc-editor .token.inline-code {
+  color: var(--color-accent) !important;
+}
+
+/* Markdown 链接 */
+.w-tc-editor .token.link,
+.w-tc-editor .token.url {
+  color: var(--color-cyan) !important;
+}
+
+/* Markdown 引用 > */
+.w-tc-editor .token.blockquote {
+  color: var(--text-secondary) !important;
+}
+
+/* Markdown 分隔线 --- */
+.w-tc-editor .token.hr {
+  color: var(--text-tertiary) !important;
+}
+
+/* Markdown 符号类 (###, **, -, etc.) */
+.w-tc-editor .token.punctuation {
+  color: var(--text-tertiary) !important;
+}
+
+/* Markdown 字符串 */
+.w-tc-editor .token.string {
+  color: var(--color-cyan) !important;
+}
+
+/* Markdown 数字 */
+.w-tc-editor .token.number {
+  color: var(--color-accent) !important;
+}

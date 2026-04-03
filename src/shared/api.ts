@@ -9,6 +9,7 @@ import type { PipelineProgress } from './pipeline'
 import type { AppSettings, WhisperModelSize } from './settings'
 import type { UploadRecord, UploadPlatform } from './upload'
 import type { PromptTemplate } from './prompt'
+import type { GLMModel, AnalysisMode } from './project'
 
 /** 文件过滤器 */
 export interface FileFilter {
@@ -76,6 +77,27 @@ export interface ElectronAPI {
   createTemplate: (name: string, content: string) => Promise<PromptTemplate>
   updateTemplate: (id: string, name: string, content: string) => Promise<PromptTemplate>
   deleteTemplate: (id: string) => Promise<void>
+
+  // GLM 分析
+  glmAnalyze: (options: {
+    framePaths: string[]
+    subtitleText: string
+    userPrompt: string
+    model: GLMModel
+    analysisMode: AnalysisMode
+    systemPrompt?: string
+    apiKey?: string
+  }) => Promise<{
+    success: boolean
+    data?: {
+      clips: Array<{ startTime: number; endTime: number; reason: string }>
+      rawResponse: string
+      usage?: { promptTokens: number; completionTokens: number; totalTokens: number }
+    }
+    error?: { message: string; code: string; statusCode?: number }
+  }>
+  glmValidateKey: (apiKey: string) => Promise<{ success: boolean; data: boolean }>
+  onGlmProgress: (callback: (progress: { progress: number; message: string }) => void) => () => void
 
   // 对话框
   openFileDialog: (filters?: FileFilter[]) => Promise<string | null>

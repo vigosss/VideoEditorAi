@@ -21,6 +21,7 @@ export interface AppSettings {
   glmApiKey: string
   defaultModel: GLMModel
   defaultAnalysisMode: AnalysisMode
+  systemPrompt: string
   whisperModel: WhisperModelSize
   outputFormat: OutputFormat
   outputResolution: Resolution

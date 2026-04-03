@@ -61,6 +61,17 @@ const api: ElectronAPI = {
   updateTemplate: (id, name, content) => ipcRenderer.invoke('template:update', id, name, content),
   deleteTemplate: (id) => ipcRenderer.invoke('template:delete', id),
 
+  // GLM 分析
+  glmAnalyze: (options) => ipcRenderer.invoke('glm:analyze', options),
+  glmValidateKey: (apiKey) => ipcRenderer.invoke('glm:validateKey', apiKey),
+  onGlmProgress: (callback) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: unknown) => {
+      callback(data as Parameters<typeof callback>[0])
+    }
+    ipcRenderer.on('glm:progress', handler)
+    return () => ipcRenderer.removeListener('glm:progress', handler)
+  },
+
   // 对话框
   openFileDialog: (filters) => ipcRenderer.invoke('dialog:openFile', filters),
   openDirectoryDialog: () => ipcRenderer.invoke('dialog:openDirectory'),

@@ -45,6 +45,11 @@ export const IPC_CHANNELS = {
   WHISPER_DELETE_MODEL: 'whisper:deleteModel',
   WHISPER_PROGRESS: 'whisper:progress',
 
+  // GLM 分析
+  GLM_ANALYZE: 'glm:analyze',
+  GLM_VALIDATE_KEY: 'glm:validateKey',
+  GLM_PROGRESS: 'glm:progress',
+
   // 对话框
   DIALOG_OPEN_FILE: 'dialog:openFile',
   DIALOG_OPEN_DIRECTORY: 'dialog:openDirectory',
