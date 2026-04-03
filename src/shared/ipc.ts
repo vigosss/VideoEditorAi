@@ -17,6 +17,12 @@ export const IPC_CHANNELS = {
   VIDEO_START_PROCESS: 'video:startProcess',
   VIDEO_CANCEL_PROCESS: 'video:cancelProcess',
   VIDEO_PROGRESS: 'video:progress',
+  VIDEO_EXTRACT_AUDIO: 'video:extractAudio',
+  VIDEO_EXTRACT_FRAMES: 'video:extractFrames',
+  VIDEO_CLIP: 'video:clip',
+  VIDEO_MERGE: 'video:merge',
+  VIDEO_EMBED_SUBTITLES: 'video:embedSubtitles',
+  VIDEO_CHECK_FFMPEG: 'video:checkFfmpeg',
 
   // 设置
   SETTINGS_GET: 'settings:get',

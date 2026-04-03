@@ -14,6 +14,12 @@ const api: ElectronAPI = {
   getVideoInfo: (filePath) => ipcRenderer.invoke('video:getInfo', filePath),
   startProcess: (projectId) => ipcRenderer.invoke('video:startProcess', projectId),
   cancelProcess: (projectId) => ipcRenderer.invoke('video:cancelProcess', projectId),
+  checkFfmpeg: () => ipcRenderer.invoke('video:checkFfmpeg'),
+  extractAudio: (videoPath, outputDir) => ipcRenderer.invoke('video:extractAudio', videoPath, outputDir),
+  extractFrames: (videoPath, outputDir, interval) => ipcRenderer.invoke('video:extractFrames', videoPath, outputDir, interval),
+  clipVideo: (videoPath, clips, outputDir) => ipcRenderer.invoke('video:clip', videoPath, clips, outputDir),
+  mergeClips: (clipPaths, outputPath) => ipcRenderer.invoke('video:merge', clipPaths, outputPath),
+  embedSubtitles: (videoPath, srtPath, outputPath) => ipcRenderer.invoke('video:embedSubtitles', videoPath, srtPath, outputPath),
   onProgress: (callback) => {
     const handler = (_event: Electron.IpcRendererEvent, data: unknown) => {
       callback(data as Parameters<typeof callback>[0])

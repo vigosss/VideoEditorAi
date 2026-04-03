@@ -35,14 +35,20 @@ export function getProjectDir(projectId: string): string {
   return ensureDir(join(getProjectsDir(), projectId))
 }
 
-/** FFmpeg 二进制文件目录（开发/生产环境路径不同） */
+/** FFmpeg 二进制路径（开发/生产环境路径不同） */
 export function getFfmpegPath(): string {
-  // 生产环境：打包在 resources/ffmpeg 目录下
-  // 开发环境：使用系统安装的 ffmpeg
   if (app.isPackaged) {
-    return join(process.resourcesPath, 'ffmpeg')
+    return join(process.resourcesPath, 'ffmpeg', 'ffmpeg')
   }
   return 'ffmpeg' // 开发环境依赖系统 PATH
+}
+
+/** FFprobe 二进制路径 */
+export function getFfprobePath(): string {
+  if (app.isPackaged) {
+    return join(process.resourcesPath, 'ffmpeg', 'ffprobe')
+  }
+  return 'ffprobe' // 开发环境依赖系统 PATH
 }
 
 /** Whisper 模型存储目录 */

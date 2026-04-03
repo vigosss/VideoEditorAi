@@ -30,6 +30,12 @@ export interface ElectronAPI {
   getVideoInfo: (filePath: string) => Promise<VideoInfo>
   startProcess: (projectId: string) => Promise<void>
   cancelProcess: (projectId: string) => Promise<void>
+  checkFfmpeg: () => Promise<boolean>
+  extractAudio: (videoPath: string, outputDir?: string) => Promise<string>
+  extractFrames: (videoPath: string, outputDir: string, interval?: number) => Promise<string[]>
+  clipVideo: (videoPath: string, clips: Array<{ startTime: number; endTime: number; reason?: string }>, outputDir: string) => Promise<string[]>
+  mergeClips: (clipPaths: string[], outputPath: string) => Promise<string>
+  embedSubtitles: (videoPath: string, srtPath: string, outputPath: string) => Promise<string>
   onProgress: (callback: (progress: PipelineProgress) => void) => () => void
 
   // 设置
