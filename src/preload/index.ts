@@ -36,6 +36,12 @@ const api: ElectronAPI = {
     return () => ipcRenderer.removeListener('upload:progress', handler)
   },
 
+  // Prompt 模板
+  listTemplates: () => ipcRenderer.invoke('template:list'),
+  createTemplate: (name, content) => ipcRenderer.invoke('template:create', name, content),
+  updateTemplate: (id, name, content) => ipcRenderer.invoke('template:update', id, name, content),
+  deleteTemplate: (id) => ipcRenderer.invoke('template:delete', id),
+
   // 对话框
   openFileDialog: (filters) => ipcRenderer.invoke('dialog:openFile', filters),
   openDirectoryDialog: () => ipcRenderer.invoke('dialog:openDirectory'),

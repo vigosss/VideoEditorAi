@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { toast } from 'react-toastify'
@@ -16,16 +16,9 @@ import {
 import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Select'
 import { useSettingsStore } from '../stores/settingsStore'
-import type { GLMModel, AnalysisMode } from '@shared/types'
+import type { GLMModel, AnalysisMode, PromptTemplate } from '@shared/types'
 import { MODEL_OPTIONS, ANALYSIS_MODE_OPTIONS } from '@shared/constants'
 
-/** Prompt 模板 */
-const PROMPT_TEMPLATES = [
-  { label: '🔥 精彩片段集锦', value: '帮我找出视频中所有精彩片段，每个片段不超过30秒，适合发布到短视频平台' },
-  { label: '✂️ 去除冗余', value: '帮我去除视频中所有冗余、重复、无意义的片段，保留核心内容' },
-  { label: '🎯 高光时刻', value: '找出视频中最吸引人的高光时刻，每个片段15-60秒' },
-  { label: '📝 知识要点', value: '提取视频中所有知识点和重要信息，按时间顺序整理' },
-]
 
 export default function Home() {
   const navigate = useNavigate()
@@ -41,6 +34,16 @@ export default function Home() {
   const [showConfig, setShowConfig] = useState(false)
   const [creating, setCreating] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
+
+  // 模板数据
+  const [templates, setTemplates] = useState<PromptTemplate[]>([])
+
+  /** 加载模板列表 */
+  useEffect(() => {
+    window.electronAPI.listTemplates().then(setTemplates).catch(() => {
+      // 静默处理，不影响用户操作
+    })
+  }, [])
 
   /** 选择视频文件 */
   const handleSelectFile = useCallback(async () => {
@@ -75,8 +78,8 @@ export default function Home() {
   }, [])
 
   /** 选择模板 */
-  const handleSelectTemplate = (tpl: (typeof PROMPT_TEMPLATES)[number]) => {
-    setPrompt(tpl.value)
+  const handleSelectTemplate = (tpl: PromptTemplate) => {
+    setPrompt(tpl.content)
     setShowTemplates(false)
   }
 
@@ -238,7 +241,7 @@ export default function Home() {
             size="sm"
             onClick={() => setShowTemplates(!showTemplates)}
           >
-            快速模板
+            选择模板
             <ChevronDown className={`h-3 w-3 transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
           </Button>
         </div>
@@ -251,16 +254,22 @@ export default function Home() {
             exit={{ opacity: 0, height: 0 }}
             className="mb-3 flex flex-wrap gap-2"
           >
-            {PROMPT_TEMPLATES.map((tpl) => (
-              <Button
-                key={tpl.label}
-                variant="secondary"
-                size="sm"
-                onClick={() => handleSelectTemplate(tpl)}
-              >
-                {tpl.label}
-              </Button>
-            ))}
+            {templates.length === 0 ? (
+              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                暂无模板，请先在「模板管理」中创建
+              </p>
+            ) : (
+              templates.map((tpl) => (
+                <Button
+                  key={tpl.id}
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => handleSelectTemplate(tpl)}
+                >
+                  {tpl.name}
+                </Button>
+              ))
+            )}
           </motion.div>
         )}
 

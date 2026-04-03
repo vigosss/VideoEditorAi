@@ -3,6 +3,7 @@ import { registerSettingsIPC } from './settings'
 import { registerVideoIPC } from './video'
 import { registerUploadIPC } from './upload'
 import { registerDialogIPC } from './dialog'
+import { registerTemplateIPC } from './template'
 
 /** 注册所有 IPC 处理器 */
 export function registerAllIPC(): void {
@@ -11,5 +12,6 @@ export function registerAllIPC(): void {
   registerVideoIPC()
   registerUploadIPC()
   registerDialogIPC()
+  registerTemplateIPC()
   console.log('[ipc] 所有 IPC 处理器注册完成')
 }

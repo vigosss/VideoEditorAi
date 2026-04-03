@@ -26,6 +26,12 @@ export const IPC_CHANNELS = {
   UPLOAD_START: 'upload:start',
   UPLOAD_PROGRESS: 'upload:progress',
 
+  // Prompt 模板
+  TEMPLATE_LIST: 'template:list',
+  TEMPLATE_CREATE: 'template:create',
+  TEMPLATE_UPDATE: 'template:update',
+  TEMPLATE_DELETE: 'template:delete',
+
   // 对话框
   DIALOG_OPEN_FILE: 'dialog:openFile',
   DIALOG_OPEN_DIRECTORY: 'dialog:openDirectory',

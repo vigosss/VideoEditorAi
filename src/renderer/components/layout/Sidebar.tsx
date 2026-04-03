@@ -8,6 +8,7 @@ import {
   Scissors,
   ChevronLeft,
   ChevronRight,
+  LayoutTemplate,
 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { Button } from '../ui/Button'
@@ -15,8 +16,8 @@ import { Button } from '../ui/Button'
 const navItems = [
   { to: '/', icon: Home, label: '首页' },
   { to: '/projects', icon: FolderOpen, label: '项目列表' },
+  { to: '/templates', icon: LayoutTemplate, label: '模板管理' },
   { to: '/settings', icon: Settings, label: '设置' },
-  // { to: '/about', icon: Info, label: '关于' },
 ]
 
 export function Sidebar() {

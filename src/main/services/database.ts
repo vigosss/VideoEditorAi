@@ -386,6 +386,15 @@ export function listPromptTemplates(): PromptTemplate[] {
   return database.prepare('SELECT * FROM prompt_templates ORDER BY created_at DESC').all() as PromptTemplate[]
 }
 
+/** 更新 Prompt 模板 */
+export function updatePromptTemplate(id: string, name: string, content: string): PromptTemplate {
+  const database = getDatabase()
+  database.prepare('UPDATE prompt_templates SET name = ?, content = ? WHERE id = ?').run(name, content, id)
+  const row = database.prepare('SELECT * FROM prompt_templates WHERE id = ?').get(id) as PromptTemplate | undefined
+  if (!row) throw new Error(`模板不存在: ${id}`)
+  return row
+}
+
 /** 删除 Prompt 模板 */
 export function deletePromptTemplate(id: string): void {
   const database = getDatabase()

@@ -8,6 +8,7 @@ import type { VideoInfo } from './video'
 import type { PipelineProgress } from './pipeline'
 import type { AppSettings } from './settings'
 import type { UploadRecord, UploadPlatform } from './upload'
+import type { PromptTemplate } from './prompt'
 
 /** 文件过滤器 */
 export interface FileFilter {
@@ -38,6 +39,12 @@ export interface ElectronAPI {
   // 上传
   startUpload: (projectId: string, platform: UploadPlatform) => Promise<UploadRecord>
   onUploadProgress: (callback: (progress: { platform: UploadPlatform; progress: number }) => void) => () => void
+
+  // Prompt 模板
+  listTemplates: () => Promise<PromptTemplate[]>
+  createTemplate: (name: string, content: string) => Promise<PromptTemplate>
+  updateTemplate: (id: string, name: string, content: string) => Promise<PromptTemplate>
+  deleteTemplate: (id: string) => Promise<void>
 
   // 对话框
   openFileDialog: (filters?: FileFilter[]) => Promise<string | null>
