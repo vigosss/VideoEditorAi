@@ -140,13 +140,16 @@ export default function Home() {
         transition={{ duration: 0.5 }}
         className="mb-8 text-center"
       >
-        <h1 className="mb-3 text-3xl font-bold" style={{ color: 'var(--text-primary)' }}>
-          欢迎使用{' '}
+        <h1
+          className="mb-3 text-3xl font-bold"
+          style={{ color: "var(--text-primary)" }}
+        >
+          欢迎使用{" "}
           <span className="bg-gradient-to-r from-primary-400 to-accent-400 bg-clip-text text-transparent">
             老兵AI智剪
           </span>
         </h1>
-        <p className="text-base" style={{ color: 'var(--text-secondary)' }}>
+        <p className="text-base" style={{ color: "var(--text-secondary)" }}>
           上传视频，输入需求，AI 自动分析并剪辑，一键发布到短视频平台
         </p>
       </motion.div>
@@ -158,7 +161,10 @@ export default function Home() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="glass-card mb-6 p-6"
       >
-        <div className="mb-3 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+        <div
+          className="mb-3 text-sm font-medium"
+          style={{ color: "var(--text-secondary)" }}
+        >
           <FileVideo className="mr-1.5 inline h-4 w-4 text-primary-400" />
           视频文件
         </div>
@@ -168,25 +174,40 @@ export default function Home() {
           <div
             className="flex items-center gap-4 rounded-xl border p-4"
             style={{
-              borderColor: 'var(--border-active)',
-              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05))',
+              borderColor: "var(--border-active)",
+              background:
+                "linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05))",
             }}
           >
             <div
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-              style={{ background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))' }}
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))",
+              }}
             >
               <FileVideo className="h-6 w-6 text-primary-400" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate font-medium" style={{ color: 'var(--text-primary)' }}>
+              <p
+                className="truncate font-medium"
+                style={{ color: "var(--text-primary)" }}
+              >
                 {videoName}
               </p>
-              <p className="truncate text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              <p
+                className="truncate text-xs"
+                style={{ color: "var(--text-tertiary)" }}
+              >
                 {videoPath}
               </p>
             </div>
-            <Button variant="ghost" size="sm" onClick={handleClearVideo} className="shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearVideo}
+              className="shrink-0"
+            >
               <X className="h-4 w-4" />
             </Button>
           </div>
@@ -198,24 +219,33 @@ export default function Home() {
             onDrop={handleDrop}
             className="group relative flex flex-col items-center justify-center rounded-xl border-2 border-dashed py-12 transition-all duration-300"
             style={{
-              borderColor: isDragging ? 'var(--color-primary)' : 'var(--border-color)',
+              borderColor: isDragging
+                ? "var(--color-primary)"
+                : "var(--border-color)",
               background: isDragging
-                ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05))'
-                : 'transparent',
+                ? "linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05))"
+                : "transparent",
             }}
           >
             <div
               className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl"
               style={{
-                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1))',
+                background:
+                  "linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1))",
               }}
             >
               <Upload className="h-7 w-7 text-primary-400" />
             </div>
-            <p className="mb-2 text-base font-medium" style={{ color: 'var(--text-primary)' }}>
+            <p
+              className="mb-2 text-base font-medium"
+              style={{ color: "var(--text-primary)" }}
+            >
               拖拽视频文件到此处
             </p>
-            <p className="mb-4 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+            <p
+              className="mb-4 text-sm"
+              style={{ color: "var(--text-tertiary)" }}
+            >
               或点击下方按钮选择文件（支持 MP4、MOV、AVI、MKV）
             </p>
             <Button variant="secondary" size="sm" onClick={handleSelectFile}>
@@ -234,7 +264,10 @@ export default function Home() {
         className="glass-card mb-6 p-6"
       >
         <div className="mb-3 flex items-center justify-between">
-          <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+          <span
+            className="text-sm font-medium"
+            style={{ color: "var(--text-secondary)" }}
+          >
             <Wand2 className="mr-1.5 inline h-4 w-4 text-primary-400" />
             剪辑需求描述
           </span>
@@ -244,7 +277,9 @@ export default function Home() {
             onClick={() => setShowTemplates(!showTemplates)}
           >
             选择模板
-            <ChevronDown className={`h-3 w-3 transition-transform ${showTemplates ? 'rotate-180' : ''}`} />
+            <ChevronDown
+              className={`h-3 w-3 transition-transform ${showTemplates ? "rotate-180" : ""}`}
+            />
           </Button>
         </div>
 
@@ -252,12 +287,12 @@ export default function Home() {
         {showTemplates && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className="mb-3 flex flex-wrap gap-2"
           >
             {templates.length === 0 ? (
-              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+              <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
                 暂无模板，请先在「模板管理」中创建
               </p>
             ) : (
@@ -278,7 +313,10 @@ export default function Home() {
         <textarea
           className="input-glow w-full resize-none"
           rows={4}
-          placeholder="描述你对视频的剪辑需求，例如：帮我找出视频中所有精彩片段，每个片段不超过30秒..."
+          placeholder={`描述你对视频的剪辑需求，例如：
+1. 提取视频中最精彩的高光时刻，总时长控制在3分钟以内
+2. 删除所有无人物出现的片段，保留有对话的场景
+3. 剪辑出节奏感最强的片段，适合做短视频`}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
         />
@@ -296,20 +334,23 @@ export default function Home() {
           onClick={() => setShowConfig(!showConfig)}
           className="w-full !justify-between"
         >
-          <span className="flex items-center gap-1.5 text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+          <span
+            className="flex items-center gap-1.5 text-sm font-medium"
+            style={{ color: "var(--text-secondary)" }}
+          >
             <Settings2 className="h-4 w-4 text-primary-400" />
             高级配置
           </span>
           <ChevronDown
-            className={`h-4 w-4 transition-transform duration-200 ${showConfig ? 'rotate-180' : ''}`}
-            style={{ color: 'var(--text-tertiary)' }}
+            className={`h-4 w-4 transition-transform duration-200 ${showConfig ? "rotate-180" : ""}`}
+            style={{ color: "var(--text-tertiary)" }}
           />
         </Button>
 
         {showConfig && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
+            animate={{ opacity: 1, height: "auto" }}
             className="mt-4 grid grid-cols-2 gap-4"
           >
             <Select
@@ -335,22 +376,32 @@ export default function Home() {
         transition={{ duration: 0.5, delay: 0.4 }}
         className="flex items-center justify-between"
       >
-        <div className="flex items-center gap-4 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+        <div
+          className="flex items-center gap-4 text-sm"
+          style={{ color: "var(--text-tertiary)" }}
+        >
           <span className="flex items-center gap-1.5">
             <Zap className="h-3.5 w-3.5 text-primary-400" />
             {MODEL_OPTIONS.find((m) => m.value === model)?.label}
           </span>
-          <span style={{ color: 'var(--border-color)' }}>|</span>
+          <span style={{ color: "var(--border-color)" }}>|</span>
           <span className="flex items-center gap-1.5">
             <Film className="h-3.5 w-3.5 text-accent-400" />
-            {ANALYSIS_MODE_OPTIONS.find((m) => m.value === analysisMode)?.label}模式
+            {ANALYSIS_MODE_OPTIONS.find((m) => m.value === analysisMode)?.label}
+            模式
           </span>
         </div>
-        <Button glow size="lg" onClick={handleStart} loading={creating} disabled={!videoPath || !prompt.trim()}>
+        <Button
+          glow
+          size="lg"
+          onClick={handleStart}
+          loading={creating}
+          disabled={!videoPath || !prompt.trim()}
+        >
           <Sparkles className="h-5 w-5" />
           开始分析并剪辑
         </Button>
       </motion.div>
     </div>
-  )
+  );
 }

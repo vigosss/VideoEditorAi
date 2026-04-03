@@ -1,7 +1,7 @@
 import { forwardRef, type ReactNode } from 'react'
 import clsx from 'clsx'
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'prefix'> {
   label?: string
   error?: string
   prefix?: ReactNode

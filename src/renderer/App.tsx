@@ -2,6 +2,7 @@ import { useRoutes } from 'react-router-dom'
 import { ToastContainer } from 'react-toastify'
 import { useAppStore } from './stores/appStore'
 import { routes } from './router'
+import { ForceUpdateModal } from './components/ForceUpdateModal'
 
 function App() {
   const element = useRoutes(routes)
@@ -10,6 +11,7 @@ function App() {
   return (
     <>
       {element}
+      <ForceUpdateModal />
       <ToastContainer
         position="top-right"
         autoClose={3000}

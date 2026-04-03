@@ -37,18 +37,41 @@ export function getProjectDir(projectId: string): string {
 
 /** FFmpeg 二进制路径（开发/生产环境路径不同） */
 export function getFfmpegPath(): string {
+  const isWin = process.platform === 'win32'
+  const ext = isWin ? '.exe' : ''
+
   if (app.isPackaged) {
-    return join(process.resourcesPath, 'ffmpeg', 'ffmpeg')
+    // 生产环境：从 extraResources 中读取打包的 FFmpeg
+    return join(process.resourcesPath, 'ffmpeg', `ffmpeg${ext}`)
   }
-  return 'ffmpeg' // 开发环境依赖系统 PATH
+
+  // 开发环境：使用 npm 包提供的 FFmpeg
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const ffmpegPath = require('@ffmpeg-installer/ffmpeg').path
+    return ffmpegPath
+  } catch {
+    return 'ffmpeg' // 降级：依赖系统 PATH
+  }
 }
 
 /** FFprobe 二进制路径 */
 export function getFfprobePath(): string {
+  const isWin = process.platform === 'win32'
+  const ext = isWin ? '.exe' : ''
+
   if (app.isPackaged) {
-    return join(process.resourcesPath, 'ffmpeg', 'ffprobe')
+    return join(process.resourcesPath, 'ffmpeg', `ffprobe${ext}`)
   }
-  return 'ffprobe' // 开发环境依赖系统 PATH
+
+  // 开发环境：使用 npm 包提供的 ffprobe
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const ffprobePath = require('ffprobe-static').path
+    return ffprobePath
+  } catch {
+    return 'ffprobe' // 降级：依赖系统 PATH
+  }
 }
 
 /** Whisper 模型存储目录 */

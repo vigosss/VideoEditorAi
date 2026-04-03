@@ -76,6 +76,46 @@ const api: ElectronAPI = {
   openFileDialog: (filters) => ipcRenderer.invoke('dialog:openFile', filters),
   openDirectoryDialog: () => ipcRenderer.invoke('dialog:openDirectory'),
 
+  // 自动更新
+  updaterCheck: () => ipcRenderer.invoke('updater:check'),
+  updaterDownload: () => ipcRenderer.invoke('updater:download'),
+  updaterInstall: () => ipcRenderer.invoke('updater:install'),
+  onUpdateAvailable: (callback) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: unknown) => {
+      callback(data as Parameters<typeof callback>[0])
+    }
+    ipcRenderer.on('update:available', handler)
+    return () => ipcRenderer.removeListener('update:available', handler)
+  },
+  onUpdateNotAvailable: (callback) => {
+    const handler = () => {
+      callback()
+    }
+    ipcRenderer.on('update:not-available', handler)
+    return () => ipcRenderer.removeListener('update:not-available', handler)
+  },
+  onUpdateProgress: (callback) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: unknown) => {
+      callback(data as Parameters<typeof callback>[0])
+    }
+    ipcRenderer.on('update:progress', handler)
+    return () => ipcRenderer.removeListener('update:progress', handler)
+  },
+  onUpdateDownloaded: (callback) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: unknown) => {
+      callback(data as Parameters<typeof callback>[0])
+    }
+    ipcRenderer.on('update:downloaded', handler)
+    return () => ipcRenderer.removeListener('update:downloaded', handler)
+  },
+  onUpdateError: (callback) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: unknown) => {
+      callback(data as Parameters<typeof callback>[0])
+    }
+    ipcRenderer.on('update:error', handler)
+    return () => ipcRenderer.removeListener('update:error', handler)
+  },
+
   // 平台信息
   platform: process.platform,
 

@@ -40,4 +40,4 @@ export type { PipelineProgress } from './pipeline'
 export { IPC_CHANNELS } from './ipc'
 
 // Electron API
-export type { ElectronAPI, FileFilter } from './api'
+export type { ElectronAPI, FileFilter, UpdateInfo, UpdateProgress, UpdateError } from './api'

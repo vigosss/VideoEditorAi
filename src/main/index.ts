@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import { initDatabase, closeDatabase } from './services/database'
+import { initUpdater } from './services/updater'
 import { registerAllIPC } from './ipc'
 
 function createWindow(): BrowserWindow {
@@ -72,6 +73,9 @@ app.whenReady().then(() => {
 
   // 创建主窗口
   const mainWindow = createWindow()
+
+  // 初始化自动更新服务
+  initUpdater(mainWindow)
 
   // 默认按 Ctrl/Cmd + W 关闭窗口
   optimizer.watchWindowShortcuts(mainWindow)

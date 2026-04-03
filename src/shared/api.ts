@@ -17,6 +17,27 @@ export interface FileFilter {
   extensions: string[]
 }
 
+/** 更新信息 */
+export interface UpdateInfo {
+  version: string
+  releaseNotes?: string | Array<{ note: string; version: string }>
+  releaseName?: string
+  releaseDate?: string
+}
+
+/** 更新下载进度 */
+export interface UpdateProgress {
+  percent: number
+  bytesPerSecond: number
+  transferred: number
+  total: number
+}
+
+/** 更新错误 */
+export interface UpdateError {
+  message: string
+}
+
 /** 暴露给渲染进程的 API */
 export interface ElectronAPI {
   // 项目操作
@@ -111,4 +132,14 @@ export interface ElectronAPI {
   windowMaximize: () => Promise<void>
   windowClose: () => Promise<void>
   windowIsMaximized: () => Promise<boolean>
+
+  // 自动更新
+  updaterCheck: () => Promise<void>
+  updaterDownload: () => Promise<void>
+  updaterInstall: () => Promise<void>
+  onUpdateAvailable: (callback: (info: UpdateInfo) => void) => () => void
+  onUpdateNotAvailable: (callback: () => void) => () => void
+  onUpdateProgress: (callback: (progress: UpdateProgress) => void) => () => void
+  onUpdateDownloaded: (callback: (info: { version: string }) => void) => () => void
+  onUpdateError: (callback: (error: UpdateError) => void) => () => void
 }

@@ -6,6 +6,7 @@ import { registerDialogIPC } from './dialog'
 import { registerTemplateIPC } from './template'
 import { registerWhisperIPC } from './whisper'
 import { registerGlmIPC } from './glm'
+import { registerUpdaterIPC } from './updater'
 
 /** 注册所有 IPC 处理器 */
 export function registerAllIPC(): void {
@@ -17,5 +18,6 @@ export function registerAllIPC(): void {
   registerTemplateIPC()
   registerWhisperIPC()
   registerGlmIPC()
+  registerUpdaterIPC()
   console.log('[ipc] 所有 IPC 处理器注册完成')
 }
