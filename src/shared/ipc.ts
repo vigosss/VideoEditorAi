@@ -38,6 +38,13 @@ export const IPC_CHANNELS = {
   TEMPLATE_UPDATE: 'template:update',
   TEMPLATE_DELETE: 'template:delete',
 
+  // Whisper 语音识别
+  WHISPER_TRANSCRIBE: 'whisper:transcribe',
+  WHISPER_DOWNLOAD_MODEL: 'whisper:downloadModel',
+  WHISPER_GET_MODELS: 'whisper:getModels',
+  WHISPER_DELETE_MODEL: 'whisper:deleteModel',
+  WHISPER_PROGRESS: 'whisper:progress',
+
   // 对话框
   DIALOG_OPEN_FILE: 'dialog:openFile',
   DIALOG_OPEN_DIRECTORY: 'dialog:openDirectory',

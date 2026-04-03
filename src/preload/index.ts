@@ -42,6 +42,19 @@ const api: ElectronAPI = {
     return () => ipcRenderer.removeListener('upload:progress', handler)
   },
 
+  // Whisper 语音识别
+  whisperTranscribe: (audioPath, modelSize, outputDir) => ipcRenderer.invoke('whisper:transcribe', audioPath, modelSize, outputDir),
+  whisperDownloadModel: (modelSize) => ipcRenderer.invoke('whisper:downloadModel', modelSize),
+  whisperGetModels: () => ipcRenderer.invoke('whisper:getModels'),
+  whisperDeleteModel: (modelSize) => ipcRenderer.invoke('whisper:deleteModel', modelSize),
+  onWhisperProgress: (callback) => {
+    const handler = (_event: Electron.IpcRendererEvent, data: unknown) => {
+      callback(data as Parameters<typeof callback>[0])
+    }
+    ipcRenderer.on('whisper:progress', handler)
+    return () => ipcRenderer.removeListener('whisper:progress', handler)
+  },
+
   // Prompt 模板
   listTemplates: () => ipcRenderer.invoke('template:list'),
   createTemplate: (name, content) => ipcRenderer.invoke('template:create', name, content),

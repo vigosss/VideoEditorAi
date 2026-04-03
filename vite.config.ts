@@ -19,6 +19,7 @@ export default defineConfig({
                 "better-sqlite3",
                 "fluent-ffmpeg",
                 "@electron-toolkit/utils",
+                "@napi-rs/whisper",
               ],
             },
           },

@@ -207,9 +207,9 @@
   optionalDependencies:
     global-agent "^3.0.0"
 
-"@electron/node-gyp@git+https://github.com/electron/node-gyp.git#06b29aafb7708acef8b3669835c8a7857ebc92d2":
+"@electron/node-gyp@https://github.com/electron/node-gyp#06b29aafb7708acef8b3669835c8a7857ebc92d2":
   version "10.2.0-electron.1"
-  resolved "git+https://github.com/electron/node-gyp.git#06b29aafb7708acef8b3669835c8a7857ebc92d2"
+  resolved "https://github.com/electron/node-gyp#06b29aafb7708acef8b3669835c8a7857ebc92d2"
   dependencies:
     env-paths "^2.2.0"
     exponential-backoff "^3.1.1"
@@ -479,6 +479,30 @@
     lodash "^4.17.15"
     tmp-promise "^3.0.2"
 
+"@napi-rs/whisper-darwin-arm64@0.0.4":
+  version "0.0.4"
+  resolved "https://registry.npmmirror.com/@napi-rs/whisper-darwin-arm64/-/whisper-darwin-arm64-0.0.4.tgz#66e6501f417c3eba7feb7b1c9b76b73b7025c51f"
+  integrity sha512-elrth/U0CqkPTsG9MFU4krcgd+7qiYBe0ikHbfdJWuqcEfvoIifZ47GQJy5dlCBLvPXk1lcxUtMGtR3TggSSOA==
+
+"@napi-rs/whisper-darwin-x64@0.0.4":
+  version "0.0.4"
+  resolved "https://registry.npmmirror.com/@napi-rs/whisper-darwin-x64/-/whisper-darwin-x64-0.0.4.tgz#d045136be03e5d4785b0af44077c2231ed58b4d1"
+  integrity sha512-g1yCDk7p2LJrQgLOZ74HuTss4MEAAOlBDthoFhEiZ0Va3vZmXaFiEmvtCOy5K//5qtvzaqJLAoVmUDbtNjV7CQ==
+
+"@napi-rs/whisper-linux-x64-gnu@0.0.4":
+  version "0.0.4"
+  resolved "https://registry.npmmirror.com/@napi-rs/whisper-linux-x64-gnu/-/whisper-linux-x64-gnu-0.0.4.tgz#6a70cec34145767f7aa0653a945a941342a69056"
+  integrity sha512-1O4uyUYOhR/nLzRSKia3x18gsEcCy9VigPQE3WYMMbzlRxUcsf0hCV5HHGnojSLChW8HVYE58SXTBdEDUdCsfw==
+
+"@napi-rs/whisper@^0.0.4":
+  version "0.0.4"
+  resolved "https://registry.npmmirror.com/@napi-rs/whisper/-/whisper-0.0.4.tgz#1621ebfa0158b8e1b302e5e0abaaf81ae366118a"
+  integrity sha512-+GFBj5YdC9uEDBhGz2DvmJ0lKGWkEDMnE320T7wNccGXwhGa6DDvsc3v0WBTyXW0T3ew31Z05nle1ExNWmWXSQ==
+  optionalDependencies:
+    "@napi-rs/whisper-darwin-arm64" "0.0.4"
+    "@napi-rs/whisper-darwin-x64" "0.0.4"
+    "@napi-rs/whisper-linux-x64-gnu" "0.0.4"
+
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
   resolved "https://registry.npmmirror.com/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz#7619c2eb21b25483f6d167548b4cfd5a7488c3d5"
@@ -739,6 +763,13 @@
   version "2.1.28"
   resolved "https://registry.npmmirror.com/@types/fluent-ffmpeg/-/fluent-ffmpeg-2.1.28.tgz#d8039bafc06aa8770c75aeb818d8248c39b977c1"
   integrity sha512-5ovxsDwBcPfJ+eYs1I/ZpcYCnkce7pvH9AHSvrZllAp1ZPpTRDZAFjF3TRFbukxSgIYTTNYePbS0rKUmaxVbXw==
+  dependencies:
+    "@types/node" "*"
+
+"@types/follow-redirects@^1.14.4":
+  version "1.14.4"
+  resolved "https://registry.npmmirror.com/@types/follow-redirects/-/follow-redirects-1.14.4.tgz#ca054d72ef574c77949fc5fff278b430fcd508ec"
+  integrity sha512-GWXfsD0Jc1RWiFmMuMFCpXMzi9L7oPDVwxUnZdg89kDNnqsRfUKXEtUYtA98A6lig1WXH/CYY/fvPW9HuN5fTA==
   dependencies:
     "@types/node" "*"
 
@@ -1854,6 +1885,11 @@ fluent-ffmpeg@^2.1.3:
   dependencies:
     async "^0.2.9"
     which "^1.1.1"
+
+follow-redirects@^1.15.11:
+  version "1.15.11"
+  resolved "https://registry.npmmirror.com/follow-redirects/-/follow-redirects-1.15.11.tgz#777d73d72a92f8ec4d2e410eb47352a56b8e8340"
+  integrity sha512-deG2P0JfjrTxl50XGCDyfI97ZGVCxIpfKYmfyrQ54n5FO/0gfIES8C/Psl6kWVDolizcaaxZJnTS0QSMxvnsBQ==
 
 foreground-child@^3.1.0:
   version "3.3.1"

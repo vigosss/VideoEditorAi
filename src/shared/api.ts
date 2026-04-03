@@ -6,7 +6,7 @@ import type { Project, CreateProjectParams } from './project'
 import type { Clip } from './clip'
 import type { VideoInfo } from './video'
 import type { PipelineProgress } from './pipeline'
-import type { AppSettings } from './settings'
+import type { AppSettings, WhisperModelSize } from './settings'
 import type { UploadRecord, UploadPlatform } from './upload'
 import type { PromptTemplate } from './prompt'
 
@@ -45,6 +45,31 @@ export interface ElectronAPI {
   // 上传
   startUpload: (projectId: string, platform: UploadPlatform) => Promise<UploadRecord>
   onUploadProgress: (callback: (progress: { platform: UploadPlatform; progress: number }) => void) => () => void
+
+  // Whisper 语音识别
+  whisperTranscribe: (audioPath: string, modelSize: WhisperModelSize, outputDir?: string) => Promise<{
+    segments: Array<{ id: number; startTime: number; endTime: number; text: string }>
+    fullText: string
+    srtPath: string
+  }>
+  whisperDownloadModel: (modelSize: WhisperModelSize) => Promise<{
+    size: WhisperModelSize
+    downloaded: boolean
+    path: string
+  }>
+  whisperGetModels: () => Promise<Array<{
+    size: WhisperModelSize
+    downloaded: boolean
+    path: string
+    fileSize: number
+  }>>
+  whisperDeleteModel: (modelSize: WhisperModelSize) => Promise<{ success: boolean }>
+  onWhisperProgress: (callback: (progress: {
+    type: 'download' | 'transcribe'
+    modelSize?: WhisperModelSize
+    progress: number
+    message: string
+  }) => void) => () => void
 
   // Prompt 模板
   listTemplates: () => Promise<PromptTemplate[]>
