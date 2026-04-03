@@ -11,9 +11,6 @@ import {
   Save,
   Eye,
   EyeOff,
-  Sun,
-  Moon,
-  MonitorSmartphone,
   Loader2,
 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
@@ -22,7 +19,7 @@ import { Select } from '../components/ui/Select'
 import { Card } from '../components/ui/Card'
 import { useSettingsStore } from '../stores/settingsStore'
 import { useAppStore } from '../stores/appStore'
-import type { GLMModel, AnalysisMode, WhisperModelSize, OutputFormat, Resolution, ThemeMode } from '@shared/types'
+import type { GLMModel, AnalysisMode, WhisperModelSize, OutputFormat, Resolution } from '@shared/types'
 import { MODEL_OPTIONS, ANALYSIS_MODE_OPTIONS } from '@shared/constants'
 
 const WHISPER_MODEL_OPTIONS = [
@@ -42,12 +39,6 @@ const RESOLUTION_OPTIONS = [
   { value: '720p', label: '720p（HD）' },
   { value: '480p', label: '480p（SD）' },
   { value: 'original', label: '原始分辨率' },
-]
-
-const THEME_OPTIONS = [
-  { value: 'dark', label: '深色模式', icon: <Moon className="h-4 w-4" /> },
-  { value: 'light', label: '浅色模式', icon: <Sun className="h-4 w-4" /> },
-  { value: 'system', label: '跟随系统', icon: <MonitorSmartphone className="h-4 w-4" /> },
 ]
 
 export default function Settings() {
@@ -139,7 +130,7 @@ export default function Settings() {
       <Card title="模型与分析" description="配置默认 AI 模型和分析深度">
         <div className="grid grid-cols-2 gap-4">
           <Select
-            label="默认 AI 模型"
+            label="默认 老兵AI 模型"
             value={localSettings.defaultModel}
             onChange={(v) => updateLocal('defaultModel', v as GLMModel)}
             options={MODEL_OPTIONS}
@@ -193,42 +184,6 @@ export default function Settings() {
           <Button variant="secondary" onClick={handleSelectDirectory}>
             <FolderOpen className="h-4 w-4" />
           </Button>
-        </div>
-      </Card>
-
-      {/* 主题设置 */}
-      <Card title="外观" description="应用主题设置">
-        <div className="flex gap-3">
-          {THEME_OPTIONS.map((opt) => (
-            <Button
-              key={opt.value}
-              variant="ghost"
-              onClick={() => updateLocal('theme', opt.value as ThemeMode)}
-              className={`flex flex-1 flex-col items-center gap-2 rounded-xl border p-4 transition-all duration-200 ${
-                localSettings.theme === opt.value
-                  ? '!border-[var(--border-active)]'
-                  : '!border-[var(--border-color)]'
-              }`}
-              style={{
-                background:
-                  localSettings.theme === opt.value
-                    ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.08), rgba(139, 92, 246, 0.05))'
-                    : 'transparent',
-              }}
-            >
-              <span
-                style={{ color: localSettings.theme === opt.value ? 'var(--color-primary)' : 'var(--text-tertiary)' }}
-              >
-                {opt.icon}
-              </span>
-              <span
-                className="text-xs font-medium"
-                style={{ color: localSettings.theme === opt.value ? 'var(--color-primary)' : 'var(--text-secondary)' }}
-              >
-                {opt.label}
-              </span>
-            </Button>
-          ))}
         </div>
       </Card>
 
