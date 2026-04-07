@@ -197,6 +197,20 @@
   }
 }
 
+/* ===== 移除按钮点击时的默认白边（放在 @layer 外确保高优先级）===== */
+button {
+  -webkit-appearance: none;
+  appearance: none;
+  outline: none;
+}
+
+button:focus,
+button:focus-visible,
+button:active {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent !important;
+}
+
 /* ===== CodeEditor Markdown 语法高亮（放在 @layer 外确保高优先级）===== */
 .w-tc-editor {
   color: var(--text-primary) !important;

@@ -48,10 +48,11 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <motion.button
         ref={ref}
         whileHover={isDisabled ? undefined : { scale: 1.02 }}
-        whileTap={isDisabled ? undefined : { scale: 0.98 }}
+        whileTap={isDisabled ? undefined : { opacity: 0.8 }}
         className={clsx(
-          'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all duration-200',
-          'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/50',
+          'inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors duration-200',
+          'focus:outline-none focus-visible:outline-none',
+          'appearance-none [-webkit-tap-highlight-color:transparent]',
           variantStyles[variant],
           sizeStyles[size],
           glow && variant === 'primary' && 'shadow-glow hover:shadow-glow-lg',

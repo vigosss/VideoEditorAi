@@ -37,7 +37,7 @@ export async function authorizePlatform(platform: UploadPlatform): Promise<{ aut
     // 获取平台凭证（Client Key / Secret）
     const credentials = getPlatformCredentials(platform)
     if (!credentials) {
-      return { authorized: false, error: `${config.name}平台凭证尚未配置，请联系管理员` }
+      return { authorized: false, error: `${config.name}平台凭证尚未配置` }
     }
 
     // 启动本地回调服务器
