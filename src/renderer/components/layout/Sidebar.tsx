@@ -55,7 +55,7 @@ export function Sidebar() {
           {/* Logo 辉光 */}
           <div className="absolute inset-0 rounded-lg bg-gradient-to-br from-primary-500 to-accent-500 opacity-50 blur-md" />
         </div>
-        {!sidebarCollapsed ? (
+        {!sidebarCollapsed && (
           <>
             <motion.span
               initial={{ opacity: 0 }}
@@ -75,7 +75,12 @@ export function Sidebar() {
               </Button>
             </div>
           </>
-        ) : (
+        )}
+      </div>
+
+      {/* 折叠时的展开按钮 */}
+      {sidebarCollapsed && (
+        <div className="flex justify-center pb-1">
           <Button
             variant="ghost"
             onClick={toggleSidebar}
@@ -83,8 +88,8 @@ export function Sidebar() {
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* 导航列表 */}
       <nav className="mt-2 flex flex-1 flex-col gap-1 px-3">
