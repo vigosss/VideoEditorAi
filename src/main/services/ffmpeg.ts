@@ -153,6 +153,11 @@ export async function extractAudio(videoPath: string, outputDir?: string): Promi
     .audioCodec('pcm_s16le')    // 16-bit PCM
     .audioFrequency(16000)       // 16kHz
     .audioChannels(1)            // 单声道
+    .outputOptions([
+      '-map', '0:a:0',          // 只取第一个音频流
+      '-c:s', 'copy',           // 字幕流直接拷贝，不需要解码器
+      '-c:d', 'copy',           // 数据流直接拷贝，不需要解码器
+    ])
     .format('wav')
     .output(outputPath)
 
@@ -202,6 +207,9 @@ export async function extractFrames(
     .outputOptions([
       '-vf', `fps=1/${interval},scale=1280:-2`,  // 每 N 秒一帧，宽度 1280，高度自动
       '-q:v 2',                                    // JPEG 质量（2 = 高质量）
+      '-map', '0:v:0',                             // 只取第一个视频流
+      '-c:s', 'copy',                              // 字幕流直接拷贝，不需要解码器
+      '-c:d', 'copy',                              // 数据流直接拷贝，不需要解码器
     ])
     .output(outputPattern)
 
@@ -259,6 +267,10 @@ export async function clipVideo(
   // 保持 AI 返回的原始顺序（不做排序），clips 数组的顺序 = 最终视频播放顺序
   const sortedClips = [...clips]
 
+  // 检测视频是否有音频流（用于 stream mapping）
+  const probeData = await probeVideo(videoPath)
+  const hasAudio = probeData.streams.some(s => s.codec_type === 'audio')
+
   const outputPaths: string[] = []
 
   // 逐个剪辑，避免并发导致的资源竞争
@@ -274,16 +286,27 @@ export async function clipVideo(
     // 如果已存在则先删除
     safeUnlink(outputPath)
 
+    const clipOpts: string[] = [
+      '-preset fast',       // 编码速度预设
+      '-crf 23',            // 质量因子（18-28，越小质量越高）
+      '-threads 4',         // 限制线程数，降低内存占用
+      '-x264-params ref=2', // 减少参考帧，降低内存占用
+      '-avoid_negative_ts make_zero',
+      '-map', '0:v:0',     // 只取第一个视频流
+      '-c:s', 'copy',      // 字幕流直接拷贝，不需要解码器
+      '-c:d', 'copy',      // 数据流直接拷贝，不需要解码器
+    ]
+
+    if (hasAudio) {
+      clipOpts.push('-map', '0:a:0')  // 只取第一个音频流
+    }
+
     const cmd = ffmpeg(videoPath)
       .setStartTime(clip.startTime)
       .setDuration(duration)
       .videoCodec('libx264')
       .audioCodec('aac')
-      .outputOptions([
-        '-preset fast',       // 编码速度预设
-        '-crf 23',            // 质量因子（18-28，越小质量越高）
-        '-avoid_negative_ts make_zero',
-      ])
+      .outputOptions(clipOpts)
       .output(outputPath)
 
     await runCommand(cmd)
@@ -342,12 +365,25 @@ export async function mergeClips(clipPaths: string[], outputPath: string): Promi
   writeFileSync(concatListPath, concatContent, 'utf-8')
 
   try {
+    // 检测第一个片段是否有音频流
+    const firstClipProbe = await probeVideo(clipPaths[0])
+    const hasAudio = firstClipProbe.streams.some(s => s.codec_type === 'audio')
+
+    const concatOpts: string[] = [
+      '-c', 'copy',          // 直接拷贝流，不重新编码
+      '-map', '0:v:0',      // 只拷贝第一个视频流
+      '-c:s', 'copy',       // 字幕流直接拷贝，不需要解码器
+      '-c:d', 'copy',       // 数据流直接拷贝，不需要解码器
+    ]
+
+    if (hasAudio) {
+      concatOpts.push('-map', '0:a:0')
+    }
+
     const cmd = ffmpeg()
       .input(concatListPath)
       .inputOptions(['-f concat', '-safe 0'])
-      .outputOptions([
-        '-c copy',  // 直接拷贝流，不重新编码
-      ])
+      .outputOptions(concatOpts)
       .output(outputPath)
 
     await runCommand(cmd)
@@ -405,6 +441,12 @@ export async function embedSubtitles(
     .outputOptions([
       '-preset fast',
       '-crf 23',
+      '-threads 4',         // 限制线程数，降低内存占用
+      '-x264-params ref=2', // 减少参考帧，降低内存占用
+      '-map', '0:v:0',     // 只取第一个视频流
+      '-map', '0:a:0',     // 只取第一个音频流
+      '-c:s', 'copy',      // 字幕流直接拷贝，不需要解码器
+      '-c:d', 'copy',      // 数据流直接拷贝，不需要解码器
     ])
     .output(outputPath)
 
@@ -462,16 +504,27 @@ export async function normalizeVideo(
   // scale + pad：等比缩放后用黑边填充到精确目标尺寸
   const vf = `scale=${targetWidth}:${targetHeight}:force_original_aspect_ratio=decrease,pad=${targetWidth}:${targetHeight}:(ow-iw)/2:(oh-ih)/2:black`
 
+  const outputOpts: string[] = [
+    '-preset fast',
+    '-crf 23',
+    '-threads 4',            // 限制线程数，降低内存占用
+    '-x264-params ref=2',    // 减少参考帧，降低内存占用
+    '-r', String(targetFps),
+    '-vf', vf,
+    '-pix_fmt', 'yuv420p',
+    '-movflags', '+faststart',
+    '-map', '0:v:0',         // 只取第一个视频流
+    '-c:s', 'copy',          // 字幕流直接拷贝，不需要解码器
+    '-c:d', 'copy',          // 数据流直接拷贝，不需要解码器
+  ]
+
+  if (hasAudio) {
+    outputOpts.push('-map', '0:a:0')  // 只取第一个音频流
+  }
+
   const cmd = ffmpeg(inputPath)
     .videoCodec('libx264')
-    .outputOptions([
-      '-preset fast',
-      '-crf 23',
-      '-r', String(targetFps),
-      '-vf', vf,
-      '-pix_fmt', 'yuv420p',
-      '-movflags', '+faststart',
-    ])
+    .outputOptions(outputOpts)
 
   if (hasAudio) {
     cmd.audioCodec('aac').audioFrequency(44100).audioChannels(2)
@@ -539,7 +592,13 @@ export async function normalizeAndConcat(
     const cmd = ffmpeg()
       .input(concatListPath)
       .inputOptions(['-f concat', '-safe 0'])
-      .outputOptions(['-c copy'])
+      .outputOptions([
+        '-c', 'copy',
+        '-map', '0:v:0',      // 只拷贝第一个视频流
+        '-map', '0:a:0',      // 只拷贝第一个音频流（标准化后的视频一定有音频）
+        '-c:s', 'copy',       // 字幕流直接拷贝，不需要解码器
+        '-c:d', 'copy',       // 数据流直接拷贝，不需要解码器
+      ])
       .output(outputPath)
 
     await runCommand(cmd)

@@ -90,7 +90,7 @@ export function getWhisperCliPath(): string {
   }
 
   // 开发环境：使用 resources/whisper/ 目录中的二进制
-  const devPath = join(__dirname, '..', '..', '..', 'resources', 'whisper', `whisper-cli${ext}`)
+  const devPath = join(__dirname, '..', '..', 'resources', 'whisper', `whisper-cli${ext}`)
   if (existsSync(devPath)) {
     return devPath
   }

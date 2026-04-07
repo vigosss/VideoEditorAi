@@ -20,6 +20,8 @@ import {
   CheckCircle2,
   AlertCircle,
   ExternalLink,
+  Download,
+  Trash2,
 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Input } from '../components/ui/Input'
@@ -58,6 +60,9 @@ export default function Settings() {
   const [showApiKey, setShowApiKey] = useState(false)
   const [showAdvanced, setShowAdvanced] = useState(false)
   const [localSettings, setLocalSettings] = useState(settings)
+  const [whisperModels, setWhisperModels] = useState<Array<{ size: WhisperModelSize; downloaded: boolean; path: string; fileSize: number }>>([])
+  const [whisperDownloading, setWhisperDownloading] = useState<WhisperModelSize | null>(null)
+  const [whisperProgress, setWhisperProgress] = useState(0)
 
   // 平台授权状态
   const [authStatuses, setAuthStatuses] = useState<Record<UploadPlatform, PlatformAuthStatus>>({
@@ -72,6 +77,57 @@ export default function Settings() {
   useEffect(() => {
     fetchSettings()
   }, [fetchSettings])
+
+  // 加载 Whisper 模型状态
+  const loadWhisperModels = async () => {
+    try {
+      const models = await window.electronAPI.whisperGetModels()
+      setWhisperModels(models)
+    } catch {
+      // 静默处理
+    }
+  }
+
+  useEffect(() => {
+    loadWhisperModels()
+  }, [])
+
+  // 监听 Whisper 下载进度
+  useEffect(() => {
+    const cleanup = window.electronAPI.onWhisperProgress((progress) => {
+      if (progress.type === 'download') {
+        setWhisperProgress(progress.progress)
+      }
+    })
+    return cleanup
+  }, [])
+
+  /** 下载 Whisper 模型 */
+  const handleDownloadModel = async (size: WhisperModelSize) => {
+    setWhisperDownloading(size)
+    setWhisperProgress(0)
+    try {
+      await window.electronAPI.whisperDownloadModel(size)
+      toast.success(`${size} 模型下载成功`)
+      await loadWhisperModels()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '模型下载失败')
+    } finally {
+      setWhisperDownloading(null)
+      setWhisperProgress(0)
+    }
+  }
+
+  /** 删除 Whisper 模型 */
+  const handleDeleteModel = async (size: WhisperModelSize) => {
+    try {
+      await window.electronAPI.whisperDeleteModel(size)
+      toast.success(`${size} 模型已删除`)
+      await loadWhisperModels()
+    } catch {
+      toast.error('删除模型失败')
+    }
+  }
 
   // 加载平台授权状态
   useEffect(() => {
@@ -217,6 +273,71 @@ export default function Settings() {
           onChange={(v) => updateLocal('whisperModel', v as WhisperModelSize)}
           options={WHISPER_MODEL_OPTIONS}
         />
+        <div className="mt-4 space-y-3">
+          {WHISPER_MODEL_OPTIONS.map((opt) => {
+            const modelInfo = whisperModels.find((m) => m.size === opt.value)
+            const isDownloaded = modelInfo?.downloaded ?? false
+            const isDownloading = whisperDownloading === opt.value
+            return (
+              <div
+                key={opt.value}
+                className="flex items-center gap-3 rounded-xl border p-3"
+                style={{ borderColor: 'var(--border-color)' }}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      {opt.label}
+                    </span>
+                    {isDownloaded ? (
+                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+                        style={{ background: 'var(--success-bg, #10b98115)', color: 'var(--success, #10b981)' }}
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        已下载
+                      </span>
+                    ) : isDownloading ? (
+                      <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium"
+                        style={{ background: '#3b82f615', color: '#3b82f6' }}
+                      >
+                        下载中 {whisperProgress}%
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-gray-500/10 px-2 py-0.5 text-xs font-medium text-gray-400">
+                        <AlertCircle className="h-3 w-3" />
+                        未下载
+                      </span>
+                    )}
+                  </div>
+                  {isDownloading && (
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full" style={{ background: 'var(--border-color)' }}>
+                      <div
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{ width: `${whisperProgress}%`, background: '#3b82f6' }}
+                      />
+                    </div>
+                  )}
+                </div>
+                {isDownloaded ? (
+                  <Button variant="ghost" size="sm" onClick={() => handleDeleteModel(opt.value as WhisperModelSize)}>
+                    <Trash2 className="h-4 w-4" />
+                    删除
+                  </Button>
+                ) : (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => handleDownloadModel(opt.value as WhisperModelSize)}
+                    loading={isDownloading}
+                  >
+                    <Download className="h-4 w-4" />
+                    下载
+                  </Button>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </Card>
 
       {/* 输出设置 */}

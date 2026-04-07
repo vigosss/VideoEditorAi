@@ -110,6 +110,14 @@ export default function Home() {
       return
     }
 
+    // 检查 Whisper 模型是否已下载
+    const models = await window.electronAPI.whisperGetModels()
+    const current = models.find((m) => m.size === settings.whisperModel)
+    if (!current?.downloaded) {
+      toast.warning(`Whisper ${settings.whisperModel} 模型未下载，请先前往设置页下载模型`)
+      return
+    }
+
     setCreating(true)
     try {
       const firstVideoName = getFileName(videoPaths[0]).replace(/\.[^.]+$/, '') || '未命名项目'
