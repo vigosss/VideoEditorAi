@@ -129,6 +129,7 @@ export interface ElectronAPI {
 
   // 对话框
   openFileDialog: (filters?: FileFilter[]) => Promise<string | null>
+  openFilesDialog: (filters?: FileFilter[]) => Promise<string[] | null>
   openDirectoryDialog: () => Promise<string | null>
 
   // 平台信息

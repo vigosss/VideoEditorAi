@@ -12,6 +12,8 @@ import {
   X,
   ChevronDown,
   Settings2,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Select'
@@ -25,8 +27,7 @@ export default function Home() {
   const { settings } = useSettingsStore()
 
   // 表单状态
-  const [videoPath, setVideoPath] = useState('')
-  const [videoName, setVideoName] = useState('')
+  const [videoPaths, setVideoPaths] = useState<string[]>([])
   const [prompt, setPrompt] = useState('')
   const [model, setModel] = useState<GLMModel>(settings.defaultModel)
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>(settings.defaultAnalysisMode)
@@ -45,19 +46,34 @@ export default function Home() {
     })
   }, [])
 
-  /** 选择视频文件 */
-  const handleSelectFile = useCallback(async () => {
+  /** 获取文件名 */
+  const getFileName = (path: string) => path.split('/').pop() || path.split('\\').pop() || path
+
+  /** 选择视频文件（多选） */
+  const handleSelectFiles = useCallback(async () => {
     try {
-      const path = await window.electronAPI.openFileDialog([
+      const paths = await window.electronAPI.openFilesDialog([
         { name: '视频文件', extensions: ['mp4', 'avi', 'mov', 'mkv', 'webm', 'flv'] },
       ])
-      if (path) {
-        setVideoPath(path)
-        setVideoName(path.split('/').pop() || path.split('\\').pop() || path)
+      if (paths && paths.length > 0) {
+        setVideoPaths(prev => {
+          const set = new Set([...prev, ...paths])
+          return Array.from(set)
+        })
       }
     } catch {
       toast.error('选择文件失败')
     }
+  }, [])
+
+  /** 移除单个视频 */
+  const handleRemoveVideo = useCallback((index: number) => {
+    setVideoPaths(prev => prev.filter((_, i) => i !== index))
+  }, [])
+
+  /** 清除所有视频 */
+  const handleClearVideos = useCallback(() => {
+    setVideoPaths([])
   }, [])
 
   /** 拖拽事件 */
@@ -83,15 +99,9 @@ export default function Home() {
     setShowTemplates(false)
   }
 
-  /** 清除已选视频 */
-  const handleClearVideo = () => {
-    setVideoPath('')
-    setVideoName('')
-  }
-
   /** 创建项目并开始处理 */
   const handleStart = async () => {
-    if (!videoPath) {
+    if (videoPaths.length === 0) {
       toast.warning('请先选择视频文件')
       return
     }
@@ -102,10 +112,14 @@ export default function Home() {
 
     setCreating(true)
     try {
-      const projectName = videoName.replace(/\.[^.]+$/, '') || '未命名项目'
+      const firstVideoName = getFileName(videoPaths[0]).replace(/\.[^.]+$/, '') || '未命名项目'
+      const projectName = videoPaths.length > 1
+        ? `${firstVideoName} 等${videoPaths.length}个视频`
+        : firstVideoName
+
       const project = await window.electronAPI.createProject({
         name: projectName,
-        videoPath,
+        videoPaths,
         outputPath: settings.projectSavePath || '',
         prompt: prompt.trim(),
         model,
@@ -161,54 +175,79 @@ export default function Home() {
         transition={{ duration: 0.5, delay: 0.1 }}
         className="glass-card mb-6 p-6"
       >
-        <div
-          className="mb-3 text-sm font-medium"
-          style={{ color: "var(--text-secondary)" }}
-        >
-          <FileVideo className="mr-1.5 inline h-4 w-4 text-primary-400" />
-          视频文件
+        <div className="mb-3 flex items-center justify-between">
+          <span
+            className="text-sm font-medium"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <FileVideo className="mr-1.5 inline h-4 w-4 text-primary-400" />
+            视频文件
+          </span>
+          {videoPaths.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={handleClearVideos}>
+              <Trash2 className="h-3.5 w-3.5" />
+              清除全部
+            </Button>
+          )}
         </div>
 
-        {videoPath ? (
-          /* 已选择视频 */
-          <div
-            className="flex items-center gap-4 rounded-xl border p-4"
-            style={{
-              borderColor: "var(--border-active)",
-              background:
-                "linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05))",
-            }}
-          >
-            <div
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))",
-              }}
-            >
-              <FileVideo className="h-6 w-6 text-primary-400" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p
-                className="truncate font-medium"
-                style={{ color: "var(--text-primary)" }}
+        {videoPaths.length > 0 ? (
+          /* 已选择视频列表 */
+          <div className="space-y-2">
+            {videoPaths.map((path, index) => (
+              <div
+                key={path}
+                className="flex items-center gap-3 rounded-xl border p-3"
+                style={{
+                  borderColor: "var(--border-active)",
+                  background:
+                    "linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(139, 92, 246, 0.03))",
+                }}
               >
-                {videoName}
-              </p>
-              <p
-                className="truncate text-xs"
-                style={{ color: "var(--text-tertiary)" }}
-              >
-                {videoPath}
-              </p>
-            </div>
+                <div
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-medium"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))",
+                    color: "var(--color-primary)",
+                  }}
+                >
+                  {index + 1}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p
+                    className="truncate text-sm font-medium"
+                    style={{ color: "var(--text-primary)" }}
+                  >
+                    {getFileName(path)}
+                  </p>
+                  <p
+                    className="truncate text-xs"
+                    style={{ color: "var(--text-tertiary)" }}
+                  >
+                    {path}
+                  </p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleRemoveVideo(index)}
+                  className="shrink-0"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            ))}
+
+            {/* 追加选择按钮 */}
             <Button
-              variant="ghost"
+              variant="secondary"
               size="sm"
-              onClick={handleClearVideo}
-              className="shrink-0"
+              onClick={handleSelectFiles}
+              className="w-full"
             >
-              <X className="h-4 w-4" />
+              <Plus className="h-4 w-4" />
+              继续添加视频（已选 {videoPaths.length} 个）
             </Button>
           </div>
         ) : (
@@ -246,9 +285,9 @@ export default function Home() {
               className="mb-4 text-sm"
               style={{ color: "var(--text-tertiary)" }}
             >
-              或点击下方按钮选择文件（支持 MP4、MOV、AVI、MKV）
+              或点击下方按钮选择文件（支持多选，MP4、MOV、AVI、MKV）
             </p>
-            <Button variant="secondary" size="sm" onClick={handleSelectFile}>
+            <Button variant="secondary" size="sm" onClick={handleSelectFiles}>
               <Upload className="h-4 w-4" />
               选择视频文件
             </Button>
@@ -315,7 +354,7 @@ export default function Home() {
           rows={4}
           placeholder={`描述你对视频的剪辑需求，例如：
 1. 提取视频中最精彩的高光时刻，总时长控制在3分钟以内
-2. 删除所有无人物出现的片段，保留有对话的场景
+2. 先外观后内饰，按顺序提取相关片段
 3. 剪辑出节奏感最强的片段，适合做短视频`}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -396,7 +435,7 @@ export default function Home() {
           size="lg"
           onClick={handleStart}
           loading={creating}
-          disabled={!videoPath || !prompt.trim()}
+          disabled={videoPaths.length === 0 || !prompt.trim()}
         >
           <Sparkles className="h-5 w-5" />
           开始分析并剪辑

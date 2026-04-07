@@ -36,6 +36,7 @@ import { PLATFORM_CONFIGS } from '@shared/platform'
 
 /** 处理步骤列表 */
 const PROCESSING_STEPS: { key: ProcessingStep; label: string }[] = [
+  { key: 'normalizing', label: '视频合并' },
   { key: 'parsing', label: '视频解析' },
   { key: 'extracting', label: '音频提取' },
   { key: 'transcribing', label: '语音转录' },
@@ -319,7 +320,9 @@ export default function ProjectDetail() {
               视频文件
             </span>
             <p className="mt-0.5 truncate" style={{ color: 'var(--text-primary)' }}>
-              {project.videoPath.split('/').pop() || project.videoPath.split('\\').pop()}
+              {project.videoPaths && project.videoPaths.length > 1
+                ? `${project.videoPaths.length} 个视频文件`
+                : (project.videoPath.split('/').pop() || project.videoPath.split('\\').pop())}
             </p>
           </div>
           <div>

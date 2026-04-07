@@ -80,6 +80,7 @@ const api: ElectronAPI = {
 
   // 对话框
   openFileDialog: (filters) => ipcRenderer.invoke('dialog:openFile', filters),
+  openFilesDialog: (filters) => ipcRenderer.invoke('dialog:openFiles', filters),
   openDirectoryDialog: () => ipcRenderer.invoke('dialog:openDirectory'),
 
   // 自动更新

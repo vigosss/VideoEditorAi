@@ -11,7 +11,7 @@ import type { PipelineProgress } from '../../shared/pipeline'
 import type { Project, ProcessingStep } from '../../shared/project'
 
 import { getProject, updateProjectStatus, updateProject, createClips, getClipsByProject, deleteClipsByProject } from './database'
-import { getVideoInfo, extractAudio, extractFrames, clipVideo, mergeClips, embedSubtitles, getProjectWorkDir } from './ffmpeg'
+import { getVideoInfo, extractAudio, extractFrames, clipVideo, mergeClips, embedSubtitles, getProjectWorkDir, normalizeAndConcat } from './ffmpeg'
 import { transcribeAudio, isModelDownloaded } from './whisper'
 import { analyzeVideo } from './glm'
 import type { ClipParams } from './ffmpeg'
@@ -85,7 +85,6 @@ export async function runPipeline(
   const audioPath = join(workDir, 'audio.wav')
   const srtPath = join(workDir, 'subtitles.srt')
   const mergedPath = join(workDir, 'merged.mp4')
-  const outputPath = join(project.outputPath, `${basename(project.videoPath, extname(project.videoPath))}_final.mp4`)
 
   // 进度发送辅助函数
   const sendProgress = (stepIndex: number, stepProgress: number, message: string) => {
@@ -121,47 +120,76 @@ export async function runPipeline(
 
   try {
     // 更新项目状态为处理中
-    updateProjectStatus(projectId, 'processing', 'parsing', 0)
+    updateProjectStatus(projectId, 'processing', 'normalizing', 0)
 
     // ==========================================
-    // 步骤1: 视频解析
+    // 步骤 0: 视频合并（多视频时标准化+拼接）
     // ==========================================
-    const stepIndex = 0
-    sendProgress(stepIndex, 0, '正在解析视频信息...')
-    checkCancelled()
+    const step0Index = 0
+    let workingVideoPath = project.videoPath  // 默认工作视频
 
-    const videoInfo = await getVideoInfo(project.videoPath)
-    console.log(`[Pipeline] 视频信息: 时长=${videoInfo.duration}s, 分辨率=${videoInfo.width}x${videoInfo.height}, 帧率=${videoInfo.fps}`)
+    if (project.videoPaths && project.videoPaths.length > 1) {
+      sendProgress(step0Index, 0, `正在合并 ${project.videoPaths.length} 个视频文件...`)
+      checkCancelled()
 
-    sendProgress(stepIndex, 100, `视频解析完成 (时长: ${Math.round(videoInfo.duration)}秒)`)
+      const normalizedDir = join(workDir, 'normalized')
+      const concatResultPath = join(workDir, 'concat_input.mp4')
+      workingVideoPath = await normalizeAndConcat(project.videoPaths, normalizedDir, concatResultPath)
+
+      // 更新项目的工作视频路径
+      updateProject(projectId, { videoPath: workingVideoPath })
+
+      sendProgress(step0Index, 100, `视频合并完成 (${project.videoPaths.length} 个文件)`)
+    } else {
+      // 单视频，跳过合并步骤
+      sendProgress(step0Index, 100, '单视频模式，跳过合并')
+    }
+
+    // 输出路径（多视频用项目名，单视频用原视频名）
+    const outputName = project.videoPaths && project.videoPaths.length > 1
+      ? `${project.name}_final.mp4`
+      : `${basename(workingVideoPath, extname(workingVideoPath))}_final.mp4`
+    const outputPath = join(project.outputPath, outputName)
 
     // ==========================================
-    // 步骤2: 音频提取
+    // 步骤 1: 视频解析
     // ==========================================
     const step1Index = 1
-    sendProgress(step1Index, 0, '正在提取音频...')
+    sendProgress(step1Index, 0, '正在解析视频信息...')
     checkCancelled()
 
-    const extractedAudioPath = await extractAudio(project.videoPath, workDir)
+    const videoInfo = await getVideoInfo(workingVideoPath)
+    console.log(`[Pipeline] 视频信息: 时长=${videoInfo.duration}s, 分辨率=${videoInfo.width}x${videoInfo.height}, 帧率=${videoInfo.fps}`)
+
+    sendProgress(step1Index, 100, `视频解析完成 (时长: ${Math.round(videoInfo.duration)}秒)`)
+
+    // ==========================================
+    // 步骤 2: 音频提取
+    // ==========================================
+    const step2Index = 2
+    sendProgress(step2Index, 0, '正在提取音频...')
+    checkCancelled()
+
+    const extractedAudioPath = await extractAudio(workingVideoPath, workDir)
     // 重命名为统一路径（extractAudio 生成的文件名可能不同）
     if (extractedAudioPath !== audioPath && existsSync(extractedAudioPath)) {
       if (existsSync(audioPath)) unlinkSync(audioPath)
       renameSync(extractedAudioPath, audioPath)
     }
 
-    sendProgress(step1Index, 100, '音频提取完成')
+    sendProgress(step2Index, 100, '音频提取完成')
 
     // ==========================================
-    // 步骤3: 语音转录 (Whisper)
+    // 步骤 3: 语音转录 (Whisper)
     // ==========================================
-    const step2Index = 2
-    sendProgress(step2Index, 0, '正在准备语音转录...')
+    const step3Index = 3
+    sendProgress(step3Index, 0, '正在准备语音转录...')
     checkCancelled()
 
     // 检查模型是否已下载
     const whisperModel = settings.whisperModel || 'base'
     if (!isModelDownloaded(whisperModel)) {
-      sendProgress(step2Index, 5, `${whisperModel} 模型未下载，请先在设置中下载模型`)
+      sendProgress(step3Index, 5, `${whisperModel} 模型未下载，请先在设置中下载模型`)
       throw new Error(`Whisper ${whisperModel} 模型未下载，请先在设置页下载模型`)
     }
 
@@ -171,17 +199,17 @@ export async function runPipeline(
       srtPath,
       (progress, message) => {
         checkCancelled()
-        sendProgress(step2Index, progress, message)
+        sendProgress(step3Index, progress, message)
       },
     )
 
-    sendProgress(step2Index, 100, `转录完成，共 ${transcribeResult.segments.length} 个段落`)
+    sendProgress(step3Index, 100, `转录完成，共 ${transcribeResult.segments.length} 个段落`)
 
     // ==========================================
-    // 步骤4: 关键帧抽取
+    // 步骤 4: 关键帧抽取
     // ==========================================
-    const step3Index = 3
-    sendProgress(step3Index, 0, '正在抽取关键帧...')
+    const step4Index = 4
+    sendProgress(step4Index, 0, '正在抽取关键帧...')
     checkCancelled()
 
     // 根据分析模式确定抽帧间隔
@@ -192,15 +220,15 @@ export async function runPipeline(
     }
     const interval = frameIntervals[project.analysisMode] || 3
 
-    const framePaths = await extractFrames(project.videoPath, framesDir, interval)
+    const framePaths = await extractFrames(workingVideoPath, framesDir, interval)
 
-    sendProgress(step3Index, 100, `关键帧抽取完成，共 ${framePaths.length} 帧`)
+    sendProgress(step4Index, 100, `关键帧抽取完成，共 ${framePaths.length} 帧`)
 
     // ==========================================
-    // 步骤5: AI 分析 (GLM)
+    // 步骤 5: AI 分析 (GLM)
     // ==========================================
-    const step4Index = 4
-    sendProgress(step4Index, 0, '正在准备 AI 分析...')
+    const step5Index = 5
+    sendProgress(step5Index, 0, '正在准备 AI 分析...')
     checkCancelled()
 
     // 检查 API Key
@@ -221,7 +249,7 @@ export async function runPipeline(
       analyzeOptions,
       (progress, message) => {
         checkCancelled()
-        sendProgress(step4Index, progress, message)
+        sendProgress(step5Index, progress, message)
       },
     )
 
@@ -245,13 +273,13 @@ export async function runPipeline(
       })),
     )
 
-    sendProgress(step4Index, 100, `AI 分析完成，共识别 ${clipRecords.length} 个片段`)
+    sendProgress(step5Index, 100, `AI 分析完成，共识别 ${clipRecords.length} 个片段`)
 
     // ==========================================
-    // 步骤6: 视频剪辑 + 合并
+    // 步骤 6: 视频剪辑 + 合并
     // ==========================================
-    const step5Index = 5
-    sendProgress(step5Index, 0, '正在剪辑视频...')
+    const step6Index = 6
+    sendProgress(step6Index, 0, '正在剪辑视频...')
     checkCancelled()
 
     const clipParams: ClipParams[] = analysisResult.clips.map((c) => ({
@@ -260,21 +288,21 @@ export async function runPipeline(
       reason: c.reason,
     }))
 
-    // 剪辑视频片段
-    const clipPaths = await clipVideo(project.videoPath, clipParams, clipsDir)
+    // 剪辑视频片段（保持 AI 返回的顺序）
+    const clipPaths = await clipVideo(workingVideoPath, clipParams, clipsDir)
 
-    sendProgress(step5Index, 60, `已剪辑 ${clipPaths.length} 个片段，正在合并...`)
+    sendProgress(step6Index, 60, `已剪辑 ${clipPaths.length} 个片段，正在合并...`)
 
     // 合并片段
     const mergedResult = await mergeClips(clipPaths, mergedPath)
 
-    sendProgress(step5Index, 100, '视频剪辑与合并完成')
+    sendProgress(step6Index, 100, '视频剪辑与合并完成')
 
     // ==========================================
-    // 步骤7: 字幕嵌入
+    // 步骤 7: 字幕嵌入
     // ==========================================
-    const step6Index = 6
-    sendProgress(step6Index, 0, '正在嵌入字幕...')
+    const step7Index = 7
+    sendProgress(step7Index, 0, '正在嵌入字幕...')
     checkCancelled()
 
     // 检查字幕文件是否存在且非空
@@ -282,16 +310,16 @@ export async function runPipeline(
       const srtStat = statSync(srtPath)
       if (srtStat.size > 0) {
         await embedSubtitles(mergedResult, srtPath, outputPath)
-        sendProgress(step6Index, 100, '字幕嵌入完成，视频处理完成！')
+        sendProgress(step7Index, 100, '字幕嵌入完成，视频处理完成！')
       } else {
         // 字幕文件为空，直接复制合并后的文件作为输出
         copyFileSync(mergedResult, outputPath)
-        sendProgress(step6Index, 100, '无字幕内容，视频处理完成！')
+        sendProgress(step7Index, 100, '无字幕内容，视频处理完成！')
       }
     } else {
       // 没有字幕文件，直接复制合并后的文件作为输出
       copyFileSync(mergedResult, outputPath)
-      sendProgress(step6Index, 100, '无字幕文件，视频处理完成！')
+      sendProgress(step7Index, 100, '无字幕文件，视频处理完成！')
     }
 
     // ==========================================

@@ -117,6 +117,14 @@ function runMigrations(database: Database.Database): void {
     CREATE INDEX IF NOT EXISTS idx_uploads_project_id ON uploads(project_id);
     CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
   `)
+
+  // 迁移：为 projects 表添加 video_paths 列（存储 JSON 数组）
+  const columns = database.prepare("PRAGMA table_info(projects)").all() as Array<{ name: string }>
+  const hasVideoPaths = columns.some(col => col.name === 'video_paths')
+  if (!hasVideoPaths) {
+    database.exec(`ALTER TABLE projects ADD COLUMN video_paths TEXT`)
+    console.log('[database] 迁移: 添加 video_paths 列')
+  }
 }
 
 // ==========================================
@@ -128,18 +136,20 @@ export function createProject(params: CreateProjectParams): Project {
   const database = getDatabase()
   const id = randomUUID()
   const now = new Date().toISOString()
+  const videoPath = params.videoPaths[0]  // 初始工作视频路径
 
   const stmt = database.prepare(`
-    INSERT INTO projects (id, name, video_path, output_path, prompt, model, analysis_mode, status, progress, current_step, error_message, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', 0, 'idle', NULL, ?)
+    INSERT INTO projects (id, name, video_path, video_paths, output_path, prompt, model, analysis_mode, status, progress, current_step, error_message, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, 'idle', NULL, ?)
   `)
 
-  stmt.run(id, params.name, params.videoPath, params.outputPath, params.prompt, params.model, params.analysisMode, now)
+  stmt.run(id, params.name, videoPath, JSON.stringify(params.videoPaths), params.outputPath, params.prompt, params.model, params.analysisMode, now)
 
   return {
     id,
     name: params.name,
-    videoPath: params.videoPath,
+    videoPath,
+    videoPaths: params.videoPaths,
     outputPath: params.outputPath,
     prompt: params.prompt,
     model: params.model,
@@ -179,7 +189,7 @@ export function updateProject(id: string, data: Partial<Project>): Project {
 
   const stmt = database.prepare(`
     UPDATE projects SET
-      name = ?, video_path = ?, output_path = ?, prompt = ?,
+      name = ?, video_path = ?, video_paths = ?, output_path = ?, prompt = ?,
       model = ?, analysis_mode = ?, status = ?, progress = ?,
       current_step = ?, error_message = ?, completed_at = ?
     WHERE id = ?
@@ -188,6 +198,7 @@ export function updateProject(id: string, data: Partial<Project>): Project {
   stmt.run(
     merged.name,
     merged.videoPath,
+    merged.videoPaths ? JSON.stringify(merged.videoPaths) : null,
     merged.outputPath,
     merged.prompt,
     merged.model,
@@ -490,6 +501,7 @@ interface RawProjectRow {
   id: string
   name: string
   video_path: string
+  video_paths: string | null
   output_path: string
   prompt: string
   model: string
@@ -530,6 +542,7 @@ function rowToProject(row: RawProjectRow): Project {
     id: row.id,
     name: row.name,
     videoPath: row.video_path,
+    videoPaths: row.video_paths ? JSON.parse(row.video_paths) : [row.video_path],
     outputPath: row.output_path,
     prompt: row.prompt,
     model: row.model as Project['model'],

@@ -18,6 +18,7 @@ export type GLMModel =
 /** 处理步骤 */
 export type ProcessingStep =
   | 'idle'
+  | 'normalizing'    // 视频合并（多视频标准化+拼接）
   | 'parsing'        // 视频解析
   | 'extracting'     // 音频提取
   | 'transcribing'   // 语音转录（Whisper）
@@ -32,7 +33,8 @@ export type ProcessingStep =
 export interface Project {
   id: string
   name: string
-  videoPath: string
+  videoPath: string        // 工作视频路径（合并结果或单个原始视频）
+  videoPaths: string[]     // 所有原始上传视频路径
   outputPath: string
   prompt: string
   model: GLMModel
@@ -48,7 +50,7 @@ export interface Project {
 /** 创建项目参数 */
 export interface CreateProjectParams {
   name: string
-  videoPath: string
+  videoPaths: string[]     // 所有上传视频路径
   outputPath: string
   prompt: string
   model: GLMModel

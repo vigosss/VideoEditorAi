@@ -256,8 +256,8 @@ export async function clipVideo(
     mkdirSync(outputDir, { recursive: true })
   }
 
-  // 按 startTime 排序
-  const sortedClips = [...clips].sort((a, b) => a.startTime - b.startTime)
+  // 保持 AI 返回的原始顺序（不做排序），clips 数组的顺序 = 最终视频播放顺序
+  const sortedClips = [...clips]
 
   const outputPaths: string[] = []
 
@@ -428,4 +428,128 @@ export function getProjectWorkDir(projectId: string): string {
     mkdirSync(dir, { recursive: true })
   }
   return dir
+}
+
+// ==========================================
+// 多视频标准化与合并
+// ==========================================
+
+/**
+ * 将单个视频标准化为统一格式（用于拼接前的预处理）
+ * @param inputPath 输入视频路径
+ * @param outputPath 输出视频路径
+ * @param targetWidth 目标宽度（默认 1920）
+ * @param targetHeight 目标高度（默认 1080）
+ * @param targetFps 目标帧率（默认 30）
+ */
+export async function normalizeVideo(
+  inputPath: string,
+  outputPath: string,
+  targetWidth: number = 1920,
+  targetHeight: number = 1080,
+  targetFps: number = 30,
+): Promise<string> {
+  if (!existsSync(inputPath)) {
+    throw new Error(`视频文件不存在: ${inputPath}`)
+  }
+
+  safeUnlink(outputPath)
+
+  // 检测输入是否有音频流
+  const probeData = await probeVideo(inputPath)
+  const hasAudio = probeData.streams.some(s => s.codec_type === 'audio')
+
+  // scale + pad：等比缩放后用黑边填充到精确目标尺寸
+  const vf = `scale=${targetWidth}:${targetHeight}:force_original_aspect_ratio=decrease,pad=${targetWidth}:${targetHeight}:(ow-iw)/2:(oh-ih)/2:black`
+
+  const cmd = ffmpeg(inputPath)
+    .videoCodec('libx264')
+    .outputOptions([
+      '-preset fast',
+      '-crf 23',
+      '-r', String(targetFps),
+      '-vf', vf,
+      '-pix_fmt', 'yuv420p',
+      '-movflags', '+faststart',
+    ])
+
+  if (hasAudio) {
+    cmd.audioCodec('aac').audioFrequency(44100).audioChannels(2)
+  } else {
+    cmd.noAudio()
+  }
+
+  cmd.output(outputPath)
+  await runCommand(cmd)
+
+  if (!existsSync(outputPath)) {
+    throw new Error('视频标准化完成但输出文件不存在')
+  }
+
+  return outputPath
+}
+
+/**
+ * 标准化多个视频并拼接为一个视频
+ * 两遍处理：第一遍逐个标准化，第二遍用 concat demuxer 拼接（流拷贝，快速）
+ * @param videoPaths 视频文件路径数组
+ * @param normalizedDir 标准化中间文件存放目录
+ * @param outputPath 最终拼接输出路径
+ */
+export async function normalizeAndConcat(
+  videoPaths: string[],
+  normalizedDir: string,
+  outputPath: string,
+): Promise<string> {
+  if (videoPaths.length === 0) {
+    throw new Error('视频列表不能为空')
+  }
+
+  if (!existsSync(normalizedDir)) {
+    mkdirSync(normalizedDir, { recursive: true })
+  }
+
+  // 第一遍：逐个标准化为统一格式
+  const normalizedPaths: string[] = []
+  for (let i = 0; i < videoPaths.length; i++) {
+    const normalizedPath = join(normalizedDir, `normalized_${String(i + 1).padStart(3, '0')}.mp4`)
+    await normalizeVideo(videoPaths[i], normalizedPath)
+    normalizedPaths.push(normalizedPath)
+  }
+
+  // 只有一个视频时直接复制
+  if (normalizedPaths.length === 1) {
+    safeUnlink(outputPath)
+    copyFileSync(normalizedPaths[0], outputPath)
+    return outputPath
+  }
+
+  // 第二遍：用 concat demuxer 拼接（已标准化，流拷贝无需重编码）
+  safeUnlink(outputPath)
+
+  const tempDir = getTempDir()
+  const concatListPath = join(tempDir, `concat_${Date.now()}.txt`)
+  const concatContent = normalizedPaths
+    .map((p) => `file '${p.replace(/'/g, "'\\''")}'`)
+    .join('\n')
+
+  writeFileSync(concatListPath, concatContent, 'utf-8')
+
+  try {
+    const cmd = ffmpeg()
+      .input(concatListPath)
+      .inputOptions(['-f concat', '-safe 0'])
+      .outputOptions(['-c copy'])
+      .output(outputPath)
+
+    await runCommand(cmd)
+  } finally {
+    safeUnlink(concatListPath)
+  }
+
+  if (!existsSync(outputPath)) {
+    throw new Error('视频合并完成但输出文件不存在')
+  }
+
+  return outputPath
 }

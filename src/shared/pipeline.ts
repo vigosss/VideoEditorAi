@@ -21,13 +21,14 @@ export interface PipelineStepConfig {
 
 /** 管线步骤列表（有序） */
 export const PIPELINE_STEPS: PipelineStepConfig[] = [
+  { key: 'normalizing', label: '视频合并', weight: 10 },
   { key: 'parsing', label: '视频解析', weight: 10 },
   { key: 'extracting', label: '音频提取', weight: 10 },
-  { key: 'transcribing', label: '语音转录', weight: 20 },
+  { key: 'transcribing', label: '语音转录', weight: 15 },
   { key: 'extracting_frames', label: '关键帧抽取', weight: 10 },
   { key: 'analyzing', label: 'AI 分析', weight: 20 },
   { key: 'clipping', label: '视频剪辑', weight: 15 },
-  { key: 'embedding_subs', label: '字幕嵌入', weight: 15 },
+  { key: 'embedding_subs', label: '字幕嵌入', weight: 10 },
 ]
 
 /** 队列中的项目状态 */

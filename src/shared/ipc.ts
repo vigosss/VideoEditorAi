@@ -58,6 +58,7 @@ export const IPC_CHANNELS = {
 
   // 对话框
   DIALOG_OPEN_FILE: 'dialog:openFile',
+  DIALOG_OPEN_FILES: 'dialog:openFiles',
   DIALOG_OPEN_DIRECTORY: 'dialog:openDirectory',
 
   // 窗口控制

@@ -67,6 +67,7 @@ function formatDate(dateStr: string): string {
 /** 处理步骤中文映射 */
 const STEP_LABELS: Record<string, string> = {
   idle: '等待中',
+  normalizing: '视频合并',
   parsing: '视频解析',
   extracting: '音频提取',
   transcribing: '语音转录',
@@ -189,7 +190,9 @@ export default function Projects() {
                   <div className="mb-2 flex items-center gap-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
                     <span className="flex items-center gap-1">
                       <FileVideo className="h-3 w-3" />
-                      {project.videoPath.split('/').pop() || project.videoPath.split('\\').pop()}
+                      {project.videoPaths && project.videoPaths.length > 1
+                        ? `${project.videoPaths.length} 个视频`
+                        : (project.videoPath.split('/').pop() || project.videoPath.split('\\').pop())}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />

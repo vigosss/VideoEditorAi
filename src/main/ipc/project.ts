@@ -17,7 +17,7 @@ export function registerProjectIPC(): void {
     if (!params.name?.trim()) {
       throw new Error('项目名称不能为空')
     }
-    if (!params.videoPath?.trim()) {
+    if (!params.videoPaths || params.videoPaths.length === 0 || params.videoPaths.some(p => !p.trim())) {
       throw new Error('视频路径不能为空')
     }
     return createProject(params)
