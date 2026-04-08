@@ -95,24 +95,24 @@ export function Header() {
 
         {/* Windows/Linux：窗口控制按钮 */}
         {!isMac && (
-          <div className="flex items-center">
+          <div className="flex items-center gap-1 mr-1">
             <Button
               variant="ghost"
               onClick={handleMinimize}
-              className="h-9 w-11 rounded-none !p-0 hover:bg-[var(--bg-tertiary)]"
+              className="h-7 w-7 rounded-lg !p-0"
               title="最小化"
             >
-              <Minus className="h-4 w-4" />
+              <Minus className="h-3.5 w-3.5" />
             </Button>
             <Button
               variant="ghost"
               onClick={handleMaximize}
-              className="h-9 w-11 rounded-none !p-0 hover:bg-[var(--bg-tertiary)]"
+              className="h-7 w-7 rounded-lg !p-0"
               title={isMaximized ? '还原' : '最大化'}
             >
               {isMaximized ? (
                 <svg
-                  className="h-3.5 w-3.5"
+                  className="h-3 w-3"
                   viewBox="0 0 16 16"
                   fill="none"
                   stroke="currentColor"
@@ -122,16 +122,16 @@ export function Header() {
                   <path d="M5 5V3.5A1.5 1.5 0 0 1 6.5 2H12.5A1.5 1.5 0 0 1 14 3.5V9.5A1.5 1.5 0 0 1 12.5 11H11" />
                 </svg>
               ) : (
-                <Square className="h-3.5 w-3.5" />
+                <Square className="h-3 w-3" />
               )}
             </Button>
             <Button
               variant="ghost"
               onClick={handleClose}
-              className="h-9 w-11 rounded-none !p-0 text-[var(--text-tertiary)] hover:bg-red-500 hover:text-white"
+              className="h-7 w-7 rounded-lg !p-0 text-[var(--text-tertiary)] hover:bg-red-500 hover:text-white"
               title="关闭"
             >
-              <X className="h-4 w-4" />
+              <X className="h-3.5 w-3.5" />
             </Button>
           </div>
         )}
