@@ -15,6 +15,7 @@ import {
   Plus,
   Trash2,
   FileText,
+  Subtitles,
 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Select } from '../components/ui/Select'
@@ -35,6 +36,7 @@ export default function Create() {
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>(settings.defaultAnalysisMode)
   const [showTemplates, setShowTemplates] = useState(false)
   const [showConfig, setShowConfig] = useState(false)
+  const [needsSubtitles, setNeedsSubtitles] = useState(false)
   const [creating, setCreating] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
 
@@ -112,12 +114,14 @@ export default function Create() {
       return
     }
 
-    // 检查 Whisper 模型是否已下载
-    const models = await window.electronAPI.whisperGetModels()
-    const current = models.find((m) => m.size === settings.whisperModel)
-    if (!current?.downloaded) {
-      toast.warning(`Whisper ${settings.whisperModel} 模型未下载，请先前往设置页下载模型`)
-      return
+    // 检查 Whisper 模型是否已下载（仅需要字幕时检查）
+    if (needsSubtitles) {
+      const models = await window.electronAPI.whisperGetModels()
+      const current = models.find((m) => m.size === settings.whisperModel)
+      if (!current?.downloaded) {
+        toast.warning(`Whisper ${settings.whisperModel} 模型未下载，请先前往设置页下载模型`)
+        return
+      }
     }
 
     setCreating(true)
@@ -135,6 +139,7 @@ export default function Create() {
         prompt: prompt.trim(),
         model,
         analysisMode,
+        needsSubtitles,
       })
 
       toast.success('项目创建成功，正在启动处理...')
@@ -329,6 +334,45 @@ export default function Create() {
           value={projectNameInput}
           onChange={(e) => setProjectNameInput(e.target.value)}
         />
+      </motion.div>
+
+      {/* 字幕选项 */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.18 }}
+        className="glass-card mb-6 p-6"
+      >
+        <label className="flex cursor-pointer items-center gap-3">
+          <div className="relative flex h-5 w-9 shrink-0">
+            <input
+              type="checkbox"
+              className="peer sr-only"
+              checked={needsSubtitles}
+              onChange={(e) => setNeedsSubtitles(e.target.checked)}
+            />
+            <div
+              className="h-5 w-9 rounded-full transition-colors duration-200"
+              style={{ background: needsSubtitles ? 'var(--color-primary)' : 'var(--border-active)' }}
+            />
+            <div
+              className={`absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-white transition-transform duration-200 ${needsSubtitles ? 'translate-x-4' : ''}`}
+            />
+          </div>
+          <span
+            className="text-sm font-medium"
+            style={{ color: "var(--text-secondary)" }}
+          >
+            <Subtitles className="mr-1.5 inline h-4 w-4 text-primary-400" />
+            需要字幕
+          </span>
+          <span
+            className="text-xs"
+            style={{ color: "var(--text-tertiary)" }}
+          >
+            开启后将通过语音转录生成字幕并嵌入视频
+          </span>
+        </label>
       </motion.div>
 
       {/* Prompt 输入区 */}

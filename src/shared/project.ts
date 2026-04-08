@@ -39,6 +39,7 @@ export interface Project {
   prompt: string
   model: GLMModel
   analysisMode: AnalysisMode
+  needsSubtitles: boolean  // 是否需要字幕
   status: ProjectStatus
   progress: number        // 0-100
   currentStep: ProcessingStep
@@ -55,4 +56,5 @@ export interface CreateProjectParams {
   prompt: string
   model: GLMModel
   analysisMode: AnalysisMode
+  needsSubtitles: boolean  // 是否需要字幕
 }

@@ -125,6 +125,13 @@ function runMigrations(database: Database.Database): void {
     database.exec(`ALTER TABLE projects ADD COLUMN video_paths TEXT`)
     console.log('[database] 迁移: 添加 video_paths 列')
   }
+
+  // 迁移：为 projects 表添加 needs_subtitles 列
+  const hasNeedsSubtitles = columns.some(col => col.name === 'needs_subtitles')
+  if (!hasNeedsSubtitles) {
+    database.exec(`ALTER TABLE projects ADD COLUMN needs_subtitles INTEGER NOT NULL DEFAULT 0`)
+    console.log('[database] 迁移: 添加 needs_subtitles 列')
+  }
 }
 
 // ==========================================
@@ -139,11 +146,11 @@ export function createProject(params: CreateProjectParams): Project {
   const videoPath = params.videoPaths[0]  // 初始工作视频路径
 
   const stmt = database.prepare(`
-    INSERT INTO projects (id, name, video_path, video_paths, output_path, prompt, model, analysis_mode, status, progress, current_step, error_message, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, 'idle', NULL, ?)
+    INSERT INTO projects (id, name, video_path, video_paths, output_path, prompt, model, analysis_mode, needs_subtitles, status, progress, current_step, error_message, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', 0, 'idle', NULL, ?)
   `)
 
-  stmt.run(id, params.name, videoPath, JSON.stringify(params.videoPaths), params.outputPath, params.prompt, params.model, params.analysisMode, now)
+  stmt.run(id, params.name, videoPath, JSON.stringify(params.videoPaths), params.outputPath, params.prompt, params.model, params.analysisMode, params.needsSubtitles ? 1 : 0, now)
 
   return {
     id,
@@ -154,6 +161,7 @@ export function createProject(params: CreateProjectParams): Project {
     prompt: params.prompt,
     model: params.model,
     analysisMode: params.analysisMode,
+    needsSubtitles: params.needsSubtitles,
     status: 'pending',
     progress: 0,
     currentStep: 'idle',
@@ -506,6 +514,7 @@ interface RawProjectRow {
   prompt: string
   model: string
   analysis_mode: string
+  needs_subtitles: number
   status: string
   progress: number
   current_step: string
@@ -547,6 +556,7 @@ function rowToProject(row: RawProjectRow): Project {
     prompt: row.prompt,
     model: row.model as Project['model'],
     analysisMode: row.analysis_mode as Project['analysisMode'],
+    needsSubtitles: row.needs_subtitles === 1,
     status: row.status as ProjectStatus,
     progress: row.progress,
     currentStep: row.current_step as ProcessingStep,

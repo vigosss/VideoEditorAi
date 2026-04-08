@@ -44,3 +44,19 @@ export interface QueueStatus {
   queue: QueueItem[]
   isProcessing: boolean
 }
+
+/** 不需要字幕时跳过的步骤 key */
+const SUBTITLE_STEP_KEYS = ['extracting', 'transcribing', 'embedding_subs']
+
+/** 根据是否需要字幕，返回活跃步骤列表（权重按比例重新分配） */
+export function getActiveSteps(needsSubtitles: boolean): PipelineStepConfig[] {
+  const steps = needsSubtitles
+    ? PIPELINE_STEPS
+    : PIPELINE_STEPS.filter(s => !SUBTITLE_STEP_KEYS.includes(s.key))
+
+  const totalWeight = steps.reduce((sum, s) => sum + s.weight, 0)
+  return steps.map(s => ({
+    ...s,
+    weight: Math.round((s.weight / totalWeight) * 100),
+  }))
+}
