@@ -14,13 +14,14 @@ import {
   XCircle,
   Play,
   Scissors,
-  Upload,
+  // Upload,         // 一键发布暂不可用
   AlertCircle,
   RefreshCw,
   Film,
   Trash2,
   StopCircle,
-  ExternalLink,
+  // ExternalLink,   // 一键发布暂不可用
+  FolderOpen,
 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -84,10 +85,10 @@ export default function ProjectDetail() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [cancelling, setCancelling] = useState(false)
 
-  // 发布相关状态
-  const [publishPlatform, setPublishPlatform] = useState<UploadPlatform | null>(null)
-  const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null)
-  const [uploadRecords, setUploadRecords] = useState<UploadRecord[]>([])
+  // // 发布相关状态 — 一键发布暂不可用
+  // const [publishPlatform, setPublishPlatform] = useState<UploadPlatform | null>(null)
+  // const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null)
+  // const [uploadRecords, setUploadRecords] = useState<UploadRecord[]>([])
 
   // 实时进度状态（本地缓存，不通过 store 刷新）
   const [liveProgress, setLiveProgress] = useState<PipelineProgress | null>(null)
@@ -98,38 +99,38 @@ export default function ProjectDetail() {
     window.electronAPI.getProjectClips(projectId).then(setClips).catch(() => {})
   }, [])
 
-  /** 加载上传记录 */
-  const loadUploadRecords = useCallback((projectId: string) => {
-    window.electronAPI.getUploadRecords(projectId).then(setUploadRecords).catch(() => {})
-  }, [])
+  // /** 加载上传记录 — 一键发布暂不可用 */
+  // const loadUploadRecords = useCallback((projectId: string) => {
+  //   window.electronAPI.getUploadRecords(projectId).then(setUploadRecords).catch(() => {})
+  // }, [])
 
   useEffect(() => {
     if (id) {
       fetchProject(id)
       loadClips(id)
-      loadUploadRecords(id)
+      // loadUploadRecords(id) // 一键发布暂不可用
     }
-  }, [id, fetchProject, loadClips, loadUploadRecords])
+  }, [id, fetchProject, loadClips])
 
-  /** 监听上传进度 */
-  useEffect(() => {
-    if (!id) return
-
-    const cleanup = window.electronAPI.onUploadProgress((progress: UploadProgress) => {
-      setUploadProgress(progress)
-
-      // 上传完成或失败时刷新记录
-      if (progress.status === 'completed') {
-        toast.success(`视频已成功发布到${PLATFORM_CONFIGS[progress.platform].name}！`)
-        if (id) loadUploadRecords(id)
-      } else if (progress.status === 'failed') {
-        toast.error(progress.message || '发布失败')
-        if (id) loadUploadRecords(id)
-      }
-    })
-
-    return cleanup
-  }, [id, loadUploadRecords])
+  // /** 监听上传进度 — 一键发布暂不可用 */
+  // useEffect(() => {
+  //   if (!id) return
+  //
+  //   const cleanup = window.electronAPI.onUploadProgress((progress: UploadProgress) => {
+  //     setUploadProgress(progress)
+  //
+  //     // 上传完成或失败时刷新记录
+  //     if (progress.status === 'completed') {
+  //       toast.success(`视频已成功发布到${PLATFORM_CONFIGS[progress.platform].name}！`)
+  //       if (id) loadUploadRecords(id)
+  //     } else if (progress.status === 'failed') {
+  //       toast.error(progress.message || '发布失败')
+  //       if (id) loadUploadRecords(id)
+  //     }
+  //   })
+  //
+  //   return cleanup
+  // }, [id, loadUploadRecords])
 
   /** 监听处理进度 */
   useEffect(() => {
@@ -217,34 +218,34 @@ export default function ProjectDetail() {
     }
   }
 
-  /** 发布视频到平台 */
-  const handlePublish = async (params: {
-    projectId: string
-    platform: UploadPlatform
-    title: string
-    description: string
-    tags: string
-  }) => {
-    await window.electronAPI.startUpload({
-      projectId: params.projectId,
-      platform: params.platform,
-      title: params.title,
-      description: params.description,
-      tags: params.tags,
-    })
-  }
-
-  /** 打开发布弹窗 */
-  const openPublishModal = (platform: UploadPlatform) => {
-    setUploadProgress(null)
-    setPublishPlatform(platform)
-  }
-
-  /** 关闭发布弹窗 */
-  const closePublishModal = () => {
-    setPublishPlatform(null)
-    setUploadProgress(null)
-  }
+  // /** 发布视频到平台 — 一键发布暂不可用 */
+  // const handlePublish = async (params: {
+  //   projectId: string
+  //   platform: UploadPlatform
+  //   title: string
+  //   description: string
+  //   tags: string
+  // }) => {
+  //   await window.electronAPI.startUpload({
+  //     projectId: params.projectId,
+  //     platform: params.platform,
+  //     title: params.title,
+  //     description: params.description,
+  //     tags: params.tags,
+  //   })
+  // }
+  //
+  // /** 打开发布弹窗 */
+  // const openPublishModal = (platform: UploadPlatform) => {
+  //   setUploadProgress(null)
+  //   setPublishPlatform(platform)
+  // }
+  //
+  // /** 关闭发布弹窗 */
+  // const closePublishModal = () => {
+  //   setPublishPlatform(null)
+  //   setUploadProgress(null)
+  // }
 
   // 加载中
   if (loading && !currentProject) {
@@ -486,73 +487,43 @@ export default function ProjectDetail() {
         </div>
       </Card>
 
-      {/* 一键发布 */}
+      {/* 一键发布暂不可用 — 提示用户手动上传 */}
       {project.status === 'completed' && (
-        <Card title="一键发布" description="将剪辑后的视频发布到短视频平台">
-          <div className="flex gap-4">
-            {(['kuaishou', 'douyin'] as UploadPlatform[]).map((platform) => {
-              const config = PLATFORM_CONFIGS[platform]
-              const record = uploadRecords.find((r) => r.platform === platform && r.status === 'completed')
-              const isUploading = uploadProgress?.platform === platform && uploadProgress?.status === 'uploading'
-
-              return (
-                <div key={platform} className="flex-1">
-                  {record ? (
-                    <div
-                      className="flex flex-col items-center gap-2 rounded-xl border p-4"
-                      style={{ borderColor: `${config.color}30`, background: `${config.color}08` }}
-                    >
-                      <CheckCircle2 className="h-5 w-5" style={{ color: config.color }} />
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                        已发布到{config.name}
-                      </p>
-                      {record.videoUrl && (
-                        <a
-                          href={record.videoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 text-xs hover:underline"
-                          style={{ color: config.color }}
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          查看视频
-                        </a>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => openPublishModal(platform)}
-                        className="mt-1"
-                      >
-                        重新发布
-                      </Button>
-                    </div>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      className="w-full"
-                      onClick={() => openPublishModal(platform)}
-                      loading={isUploading}
-                    >
-                      <div
-                        className="mr-2 flex h-5 w-5 shrink-0 items-center justify-center rounded text-xs font-bold text-white"
-                        style={{ background: config.color }}
-                      >
-                        {config.name[0]}
-                      </div>
-                      发布到{config.name}
-                    </Button>
-                  )}
-                </div>
-              )
-            })}
+        <Card title="发布视频" description="视频处理完成，请手动上传到短视频平台">
+          <div
+            className="flex flex-col items-center gap-4 rounded-xl border p-6"
+            style={{
+              borderColor: 'var(--border-color)',
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.03), rgba(139, 92, 246, 0.03))',
+            }}
+          >
+            <div
+              className="flex h-14 w-14 items-center justify-center rounded-2xl"
+              style={{
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1))',
+              }}
+            >
+              <FolderOpen className="h-7 w-7 text-primary-400" />
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                一键发布功能暂不可用
+              </p>
+              <p className="mt-1.5 text-xs leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                视频已处理完成，请前往输出目录找到剪辑后的视频文件，
+                <br />
+                手动上传到快手、抖音等短视频平台。
+              </p>
+              <p className="mt-3 rounded-lg px-3 py-2 text-xs font-mono" style={{ color: 'var(--color-primary)', background: 'rgba(99, 102, 241, 0.08)' }}>
+                {project.outputPath}
+              </p>
+            </div>
           </div>
         </Card>
       )}
 
-      {/* 发布弹窗 */}
-      {publishPlatform && id && (
+      {/* 发布弹窗 — 一键发布暂不可用 */}
+      {/* {publishPlatform && id && (
         <PublishModal
           open={!!publishPlatform}
           onClose={closePublishModal}
@@ -562,7 +533,7 @@ export default function ProjectDetail() {
           onSubmit={handlePublish}
           uploadProgress={uploadProgress?.platform === publishPlatform ? uploadProgress : null}
         />
-      )}
+      )} */}
 
       {/* 删除确认弹窗 */}
       <Modal

@@ -2,16 +2,10 @@ import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import { toast } from 'react-toastify'
 import {
-  Key,
-  Cpu,
-  Mic,
-  Film,
-  Monitor,
   FolderOpen,
   Save,
   Eye,
   EyeOff,
-  Loader2,
   ChevronDown,
   ChevronUp,
   RotateCcw,
@@ -376,7 +370,7 @@ export default function Settings() {
       {/* 平台账号管理 */}
       <Card title="平台账号管理" description="授权后可一键发布视频到短视频平台">
         <div className="space-y-4">
-          {(['kuaishou', 'douyin'] as UploadPlatform[]).map((platform) => {
+          {(['douyin'] as UploadPlatform[]).map((platform) => {
             const config = PLATFORM_CONFIGS[platform]
             const status = authStatuses[platform]
             const isAuthorizing = authorizing[platform]
