@@ -1,1 +1,38 @@
-[]
+[
+  {
+    "id": "alan-walker-fade",
+    "name": "Alan Walker - Fade",
+    "filename": "Alan Walker - Fade.mp3",
+    "duration": 260,
+    "bpm": 128,
+    "mood": "upbeat",
+    "category": "electronic"
+  },
+  {
+    "id": "axero-trip",
+    "name": "Axero - Trip",
+    "filename": "Axero - Trip (Original Mix).mp3",
+    "duration": 228,
+    "bpm": 128,
+    "mood": "upbeat",
+    "category": "electronic"
+  },
+  {
+    "id": "snigellin-sakura-tears",
+    "name": "Snigellin - Sakura Tears (樱花泪)",
+    "filename": "Snigellin - Sakura Tears (樱花泪).mp3",
+    "duration": 217,
+    "bpm": 75,
+    "mood": "dramatic",
+    "category": "lofi"
+  },
+  {
+    "id": "the-xx-intro",
+    "name": "The xx - Intro",
+    "filename": "The xx - Intro.mp3",
+    "duration": 127,
+    "bpm": 105,
+    "mood": "calm",
+    "category": "electronic"
+  }
+]
