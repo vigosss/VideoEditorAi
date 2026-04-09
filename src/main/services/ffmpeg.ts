@@ -706,10 +706,11 @@ export async function mergeClipsWithTransitions(
     const probeData = await probeVideo(p)
     hasAudioStreams.push(probeData.streams.some(s => s.codec_type === 'audio'))
   }
-  const anyHasAudio = hasAudioStreams.some(a => a)
+  const allHaveAudio = hasAudioStreams.every(a => a)
+  let audioIdx = 0
 
-  // 计算 xfade offset
-  let currentOffset = durations[0] - transitionDuration
+  // 计算 xfade offset（确保非负）
+  let currentOffset = Math.max(0, durations[0] - transitionDuration - 0.01)
 
   for (let i = 0; i < clipPaths.length - 1; i++) {
     const inputLabel1 = i === 0 ? '[0:v]' : `[v${i - 1}]`
@@ -720,23 +721,27 @@ export async function mergeClipsWithTransitions(
       `${inputLabel1}${inputLabel2}xfade=transition=${transitionType}:duration=${transitionDuration}:offset=${currentOffset.toFixed(3)}${outputLabel}`,
     )
 
-    // 音频转场
-    if (anyHasAudio) {
-      const audioInput1 = i === 0 ? '[0:a]' : `[a${i - 1}]`
+    // 音频转场（仅在所有片段都有音频时构建完整链）
+    if (allHaveAudio) {
+      const audioInput1 = audioIdx === 0 ? '[0:a]' : `[a${audioIdx - 1}]`
       const audioInput2 = `[${i + 1}:a]`
-      const audioOutputLabel = i === clipPaths.length - 2 ? '[aout]' : `[a${i}]`
+      const audioOutputLabel = i === clipPaths.length - 2 ? '[aout]' : `[a${audioIdx}]`
       audioFilters.push(
         `${audioInput1}${audioInput2}acrossfade=d=${transitionDuration}:c1=tri:c2=tri${audioOutputLabel}`,
       )
+      audioIdx++
     }
 
     if (i < clipPaths.length - 2) {
-      currentOffset = currentOffset + durations[i + 1] - transitionDuration
+      currentOffset = Math.max(0, currentOffset + durations[i + 1] - transitionDuration - 0.01)
     }
   }
 
   const allFilters = [...videoFilters, ...audioFilters]
   const complexFilter = allFilters.join(';')
+
+  console.log('[FFmpeg] 转场合并参数:', { transitionType, transitionDuration, clipCount: clipPaths.length, durations })
+  console.log('[FFmpeg] filter_complex:', complexFilter)
 
   const cmd = ffmpeg()
 
@@ -747,7 +752,7 @@ export async function mergeClipsWithTransitions(
   cmd.complexFilter(complexFilter)
   cmd.outputOptions(['-map', '[vout]'])
 
-  if (anyHasAudio) {
+  if (audioFilters.length > 0) {
     cmd.outputOptions(['-map', '[aout]'])
   }
 
@@ -760,7 +765,7 @@ export async function mergeClipsWithTransitions(
     '-threads', '4',
   ])
 
-  if (anyHasAudio) {
+  if (allHaveAudio) {
     cmd.audioCodec('aac').audioFrequency(44100).audioChannels(2)
   } else {
     cmd.noAudio()
@@ -816,11 +821,13 @@ export async function mixAudioStreams(
 
   const cmd = ffmpeg()
 
-  // BGM 输入（如果需要循环）
+  // BGM 输入
+  cmd.input(bgmPath)
+
+  // 如果需要循环，设置 inputOptions（必须在 input 之后）
   if (options.bgmLoop) {
     cmd.inputOptions(['-stream_loop', '-1'])
   }
-  cmd.input(bgmPath)
 
   // 视频输入
   cmd.input(videoPath)

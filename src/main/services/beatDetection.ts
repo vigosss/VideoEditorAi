@@ -336,7 +336,7 @@ export async function getBeatsForTrack(trackId: string): Promise<BeatInfo> {
 
   // 存入缓存
   db.prepare(
-    'INSERT OR REPLACE INTO bgm_beat_cache (bgm_track_id, beat_data, bpm, confidence, analyzed_at) VALUES (?, ?, ?, ?, datetime("now"))',
+    'INSERT OR REPLACE INTO bgm_beat_cache (bgm_track_id, beat_data, bpm, confidence, analyzed_at) VALUES (?, ?, ?, ?, datetime(\'now\'))',
   ).run(trackId, JSON.stringify(beatInfo.timestamps), beatInfo.bpm, beatInfo.confidence)
 
   return beatInfo
