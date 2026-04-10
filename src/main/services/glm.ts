@@ -57,11 +57,11 @@ const GLM_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
 const REQUEST_TIMEOUT = 120_000 // 120 秒超时
 const MAX_RETRIES = 3
 
-/** 分析模式对应的帧数量限制 */
+/** 分析模式对应的帧数量限制（与 DEFAULT_SYSTEM_PROMPT 中的片段数建议匹配） */
 const FRAME_LIMITS: Record<AnalysisMode, number> = {
-  quick: 5,
-  standard: 10,
-  deep: 20,
+  quick: 15,
+  standard: 25,
+  deep: 40,
 }
 
 // ==========================================

@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@electron-toolkit/utils": "^3.0.0",
-    "@ffmpeg-installer/ffmpeg": "^1.1.0",
+    "ffmpeg-static": "^5.2.0",
     "@uiw/react-textarea-code-editor": "^3.1.1",
     "better-sqlite3": "^11.6.0",
     "clsx": "^2.1.1",

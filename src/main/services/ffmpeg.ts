@@ -109,8 +109,22 @@ function safeUnlink(filePath: string): void {
 export async function checkFfmpegAvailable(): Promise<boolean> {
   return new Promise((resolve) => {
     const ffmpegBin = getFfmpegPath()
-    exec(`${ffmpegBin} -version`, (err) => {
+    exec(`"${ffmpegBin}" -version`, (err) => {
       resolve(!err)
+    })
+  })
+}
+
+/** 检测 FFmpeg 是否支持 xfade 滤镜（转场效果必需） */
+export async function checkXfadeAvailable(): Promise<boolean> {
+  return new Promise((resolve) => {
+    const ffmpegBin = getFfmpegPath()
+    exec(`"${ffmpegBin}" -filters`, (err, stdout) => {
+      if (err) {
+        resolve(false)
+        return
+      }
+      resolve(/\bxfade\b/.test(stdout))
     })
   })
 }

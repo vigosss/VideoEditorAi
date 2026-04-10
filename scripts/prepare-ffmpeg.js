@@ -19,24 +19,23 @@ function prepareFfmpeg() {
   const isWin = process.platform === 'win32'
   const ext = isWin ? '.exe' : ''
 
-  // 获取 @ffmpeg-installer/ffmpeg 的二进制路径
+  // 获取 ffmpeg-static 的二进制路径
   try {
-    const ffmpegInstaller = require('@ffmpeg-installer/ffmpeg')
-    const srcFfmpeg = ffmpegInstaller.path
+    const ffmpegStaticPath = require('ffmpeg-static')
     const destFfmpeg = path.join(RESOURCES_FFMPEG_DIR, `ffmpeg${ext}`)
 
-    if (fs.existsSync(srcFfmpeg)) {
-      fs.copyFileSync(srcFfmpeg, destFfmpeg)
+    if (ffmpegStaticPath && fs.existsSync(ffmpegStaticPath)) {
+      fs.copyFileSync(ffmpegStaticPath, destFfmpeg)
       // 设置可执行权限（macOS/Linux）
       if (!isWin) {
         fs.chmodSync(destFfmpeg, 0o755)
       }
-      console.log(`[prepare-ffmpeg] 已复制 ffmpeg: ${srcFfmpeg} -> ${destFfmpeg}`)
+      console.log(`[prepare-ffmpeg] 已复制 ffmpeg: ${ffmpegStaticPath} -> ${destFfmpeg}`)
     } else {
-      console.warn(`[prepare-ffmpeg] ffmpeg 源文件不存在: ${srcFfmpeg}`)
+      console.warn(`[prepare-ffmpeg] ffmpeg-static 路径无效或文件不存在: ${ffmpegStaticPath}`)
     }
   } catch (err) {
-    console.error(`[prepare-ffmpeg] 获取 ffmpeg 路径失败: ${err.message}`)
+    console.error(`[prepare-ffmpeg] 获取 ffmpeg-static 路径失败: ${err.message}`)
   }
 
   // 获取 ffprobe-static 的二进制路径
