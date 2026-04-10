@@ -941,11 +941,17 @@ export async function mergeClipsWithTransitions(
   const durations: number[] = []
   const hasAudioStreams: boolean[] = []
 
-  for (const p of clipPaths) {
-    const info = await getVideoInfo(p)
-    durations.push(info.duration)
-    const probe = await probeVideo(p)
-    hasAudioStreams.push(probe.streams.some(s => s.codec_type === 'audio'))
+  for (let i = 0; i < clipPaths.length; i++) {
+    try {
+      const info = await getVideoInfo(clipPaths[i])
+      durations.push(info.duration)
+      const probe = await probeVideo(clipPaths[i])
+      hasAudioStreams.push(probe.streams.some(s => s.codec_type === 'audio'))
+    } catch (err) {
+      throw new Error(
+        `片段 ${i + 1} (${clipPaths[i]}) 探测失败: ${(err as Error).message}`,
+      )
+    }
   }
 
   const allHaveAudio = hasAudioStreams.every(Boolean)

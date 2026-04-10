@@ -341,11 +341,27 @@ export async function runPipeline(
     sendProgress('clipping', 0, '正在剪辑视频...')
     checkCancelled()
 
-    const clipParams: ClipParams[] = finalClips.map((c) => ({
-      startTime: c.startTime,
-      endTime: c.endTime,
-      reason: c.reason,
-    }))
+    // 裁剪片段时间范围，确保不超过视频实际时长
+    const clipParams: ClipParams[] = finalClips.map((c, idx) => {
+      const startTime = Math.max(0, c.startTime)
+      const endTime = Math.min(c.endTime, videoInfo.duration)
+      return {
+        startTime,
+        endTime,
+        reason: c.reason,
+      }
+    }).filter((c, idx) => {
+      // 过滤掉时长为零或负数的无效片段
+      if (c.endTime - c.startTime < 0.1) {
+        console.warn(`[Pipeline] 片段 ${idx + 1} 裁剪后时长不足 0.1s (${c.startTime}-${c.endTime})，已跳过`)
+        return false
+      }
+      return true
+    })
+
+    if (clipParams.length === 0) {
+      throw new Error('所有剪辑片段的时间范围无效（超出视频时长或时长不足 0.1 秒）')
+    }
 
     // 剪辑视频片段
     const clipPaths = await clipVideo(workingVideoPath, clipParams, clipsDir)

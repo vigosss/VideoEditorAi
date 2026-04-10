@@ -2,9 +2,9 @@
 # electron-builder 打包配置
 # ==========================================
 
-appId: com.vigosss.video-editor-ai
+appId: com.ming.video-editor-ai
 productName: 老兵AI智剪
-copyright: Copyright © 2024 vigosss
+copyright: Copyright © 2026 ming
 
 # 目录配置
 directories:
@@ -22,8 +22,8 @@ asarUnpack:
 files:
   - dist-electron/**/*
   - package.json
-  # 排除 FFmpeg npm 包（通过 extraResources 单独打包二进制）
-  - "!node_modules/@ffmpeg-installer/**/*"
+  # 排除 FFmpeg/FFprobe npm 包（通过 extraResources 单独打包二进制）
+  - "!node_modules/ffmpeg-static/**/*"
   - "!node_modules/ffprobe-static/**/*"
 
 # 额外资源：FFmpeg、Whisper CLI 和 BGM 音乐文件
@@ -69,5 +69,5 @@ nsis:
 # ==========================================
 publish:
   provider: github
-  owner: vigosss
+  owner: ming
   repo: video-editor-ai

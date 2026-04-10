@@ -18,7 +18,7 @@ export default defineConfig({
                 "electron",
                 "better-sqlite3",
                 "fluent-ffmpeg",
-                "@ffmpeg-installer/ffmpeg",
+                "ffmpeg-static",
                 "ffprobe-static",
                 "electron-updater",
                 "electron-log",

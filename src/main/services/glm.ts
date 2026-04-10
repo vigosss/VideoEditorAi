@@ -149,10 +149,36 @@ async function callGLMApi(
   // 解析响应
   try {
     const data = await response.json()
-    const content = data?.choices?.[0]?.message?.content
-    if (!content) {
-      throw new GLMError('API 返回数据格式异常：缺少 content', 'INVALID_RESPONSE', undefined, false)
+    const choice = data?.choices?.[0]
+    const rawContent = choice?.message?.content
+
+    // 处理 content 为数组的情况（部分模型返回 [{type:"text", text:"..."}]）
+    let content: string | null = null
+    if (typeof rawContent === 'string' && rawContent.length > 0) {
+      content = rawContent
+    } else if (Array.isArray(rawContent)) {
+      content = rawContent
+        .filter((part: Record<string, unknown>) => part.type === 'text' && part.text)
+        .map((part: Record<string, unknown>) => part.text)
+        .join('\n')
     }
+
+    if (!content) {
+      // 记录完整响应以便诊断
+      console.error('[GLM] API 返回了空 content，完整响应:')
+      console.error(JSON.stringify(data, null, 2))
+
+      const finishReason = choice?.finish_reason
+      const retryable = finishReason === 'length' || finishReason === 'content_filter'
+
+      throw new GLMError(
+        `API 返回数据格式异常：content 为空${finishReason ? ` (finish_reason: ${finishReason})` : ''}`,
+        'INVALID_RESPONSE',
+        undefined,
+        retryable,
+      )
+    }
+
     return {
       content,
       usage: data?.usage
