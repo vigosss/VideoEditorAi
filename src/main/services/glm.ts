@@ -36,13 +36,15 @@ export class GLMError extends Error {
   code: string
   statusCode?: number
   retryable: boolean
+  headers?: Record<string, string>
 
-  constructor(message: string, code: string, statusCode?: number, retryable = false) {
+  constructor(message: string, code: string, statusCode?: number, retryable = false, headers?: Record<string, string>) {
     super(message)
     this.name = 'GLMError'
     this.code = code
     this.statusCode = statusCode
     this.retryable = retryable
+    this.headers = headers
   }
 }
 
@@ -124,7 +126,7 @@ async function callGLMApi(
       case 401:
         throw new GLMError('API Key 无效或已过期，请在设置中检查', 'INVALID_API_KEY', 401, false)
       case 429:
-        throw new GLMError('API 调用频率超限，请稍后重试', 'RATE_LIMITED', 429, true)
+        throw new GLMError('API 调用频率超限，请稍后重试', 'RATE_LIMITED', 429, true, Object.fromEntries(response.headers.entries()))
       case 400: {
         try {
           const errorJson = JSON.parse(errorText)
@@ -225,10 +227,27 @@ async function callWithRetry(
         throw lastError
       }
 
-      // 指数退避：1s, 2s, 4s
-      const delay = Math.pow(2, attempt) * 1000
+      // 根据错误类型计算退避时间
+      let delay: number
+      if (lastError.statusCode === 429) {
+        // 429: 优先使用 Retry-After 头，否则使用长退避 (10s, 20s, 40s)
+        const retryAfter = lastError.headers?.['retry-after']
+        if (retryAfter) {
+          const parsed = Number(retryAfter)
+          delay = !isNaN(parsed) && parsed > 0 ? parsed * 1000 : Math.pow(2, attempt) * 10_000
+        } else {
+          delay = Math.pow(2, attempt) * 10_000
+        }
+      } else {
+        // 其他可重试错误 (超时/服务端错误): 2s, 4s, 8s
+        delay = Math.pow(2, attempt + 1) * 1000
+      }
+
+      // 添加随机抖动 (±25%)，避免多个请求同时重试
+      delay = Math.round(delay * (0.75 + Math.random() * 0.5))
+
       console.warn(
-        `[GLM] 请求失败 (尝试 ${attempt + 1}/${MAX_RETRIES + 1})，${delay}ms 后重试: ${lastError.message}`,
+        `[GLM] 请求失败 (尝试 ${attempt + 1}/${MAX_RETRIES + 1})，${(delay / 1000).toFixed(1)}s 后重试: ${lastError.message}`,
       )
       onRetry?.(attempt + 1, lastError)
 

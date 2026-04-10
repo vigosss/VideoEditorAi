@@ -906,12 +906,110 @@ async function runTransitionMerge(params: {
 }
 
 /**
+ * 合并两个片段（带转场效果）
+ *
+ * 内部函数，每次只处理 2 个输入，内存占用恒定。
+ * 自带 3 级降级策略：
+ *   1. 完整转场（视频 xfade + 音频淡化混合）
+ *   2. 仅视频转场（xfade + 音频 concat）
+ *   3. 直接 concat（无转场）
+ */
+async function mergeTwoClipsWithTransition(
+  clipA: string,
+  clipB: string,
+  outputPath: string,
+  transitionType: string,
+  transitionDuration: number,
+  targetW: number,
+  targetH: number,
+): Promise<string> {
+  const clipPaths = [clipA, clipB]
+
+  // 探测两个片段的时长和音频信息
+  const durations: number[] = []
+  const hasAudioStreams: boolean[] = []
+
+  for (let i = 0; i < clipPaths.length; i++) {
+    const info = await getVideoInfo(clipPaths[i])
+    durations.push(info.duration)
+    const probe = await probeVideo(clipPaths[i])
+    hasAudioStreams.push(probe.streams.some(s => s.codec_type === 'audio'))
+  }
+
+  const allHaveAudio = hasAudioStreams.every(Boolean)
+
+  // 校验片段时长
+  for (let i = 0; i < durations.length; i++) {
+    if (durations[i] <= transitionDuration + 0.1) {
+      throw new Error(
+        `片段时长 (${durations[i].toFixed(2)}s) 不足，` +
+        `需比转场时长 (${transitionDuration}s) 大至少 0.1s`,
+      )
+    }
+  }
+
+  const complexFilter = buildTransitionFilterComplex({
+    clipCount: 2,
+    durations,
+    transitionType,
+    transitionDuration,
+    allHaveAudio,
+    targetW,
+    targetH,
+  })
+
+  // ── 方案一：完整转场 ──────────────────────────────────────
+  try {
+    await runTransitionMerge({ clipPaths, outputPath, complexFilter, allHaveAudio })
+    return outputPath
+  } catch (err) {
+    console.warn(`[FFmpeg] 两两合并完整转场失败: ${(err as Error).message}`)
+  }
+
+  // ── 方案二：仅视频转场，音频 concat ──────────────────────
+  try {
+    safeUnlink(outputPath)
+    const fallbackFilter = buildTransitionFilterComplex({
+      clipCount: 2,
+      durations,
+      transitionType,
+      transitionDuration,
+      allHaveAudio: false,
+      targetW,
+      targetH,
+    })
+
+    let fullFallbackFilter = fallbackFilter
+    if (allHaveAudio) {
+      fullFallbackFilter += ';[0:a][1:a]concat=n=2:v=0:a=1[aout]'
+    }
+
+    await runTransitionMerge({
+      clipPaths,
+      outputPath,
+      complexFilter: fullFallbackFilter,
+      allHaveAudio,
+    })
+    return outputPath
+  } catch (err2) {
+    console.warn(`[FFmpeg] 两两合并降级方案也失败: ${(err2 as Error).message}`)
+  }
+
+  // ── 方案三：直接 concat，无转场 ──────────────────────────
+  safeUnlink(outputPath)
+  return mergeClips(clipPaths, outputPath)
+}
+
+/**
  * 将多个视频片段合并为一个视频（带转场效果）
  *
- * 降级策略：
- *   1. 完整转场（视频 xfade + 音频 adelay/afade/amix）
- *   2. 仅视频转场（xfade + 音频 concat，无音频交叉淡化）
- *   3. 普通合并（无转场，concat demuxer）
+ * 采用分块合并策略：将 N 个片段拆分为 N-1 次两两合并，
+ * 每次 FFmpeg 只处理 2 个输入，内存占用恒定。
+ *
+ * 单次两两合并内部的降级策略：
+ *   1. 完整转场（视频 xfade + 音频淡化混合）
+ *   2. 仅视频转场（xfade + 音频 concat）
+ *   3. 直接 concat（无转场）
  */
 export async function mergeClipsWithTransitions(
   clipPaths: string[],
@@ -935,109 +1033,67 @@ export async function mergeClipsWithTransitions(
     return outputPath
   }
 
+  // 2 个片段直接两两合并，无需分块
+  if (clipPaths.length === 2) {
+    safeUnlink(outputPath)
+    const firstInfo = await getVideoInfo(clipPaths[0])
+    const targetW = Math.ceil((firstInfo.width || 1920) / 2) * 2
+    const targetH = Math.ceil((firstInfo.height || 1080) / 2) * 2
+    return mergeTwoClipsWithTransition(
+      clipPaths[0], clipPaths[1], outputPath,
+      transitionType, transitionDuration, targetW, targetH,
+    )
+  }
+
+  // ── 分块合并：逐对合并 N 个片段 ─────────────────────────
   safeUnlink(outputPath)
-
-  // ── 探测每个片段的时长和音频信息 ─────────────────────────
-  const durations: number[] = []
-  const hasAudioStreams: boolean[] = []
-
-  for (let i = 0; i < clipPaths.length; i++) {
-    try {
-      const info = await getVideoInfo(clipPaths[i])
-      durations.push(info.duration)
-      const probe = await probeVideo(clipPaths[i])
-      hasAudioStreams.push(probe.streams.some(s => s.codec_type === 'audio'))
-    } catch (err) {
-      throw new Error(
-        `片段 ${i + 1} (${clipPaths[i]}) 探测失败: ${(err as Error).message}`,
-      )
-    }
-  }
-
-  const allHaveAudio = hasAudioStreams.every(Boolean)
-
-  // 校验每个片段时长必须大于转场时长 + 100ms 余量
-  for (let i = 0; i < durations.length; i++) {
-    if (durations[i] <= transitionDuration + 0.1) {
-      throw new Error(
-        `片段 ${i + 1} 时长 (${durations[i].toFixed(2)}s) 不足，` +
-        `需比转场时长 (${transitionDuration}s) 大至少 0.1s`,
-      )
-    }
-  }
 
   // 从第一个片段获取目标分辨率（确保为偶数）
   const firstInfo = await getVideoInfo(clipPaths[0])
   const targetW = Math.ceil((firstInfo.width || 1920) / 2) * 2
   const targetH = Math.ceil((firstInfo.height || 1080) / 2) * 2
 
-  const totalDuration = durations.reduce((s, d) => s + d, 0)
-  const outputDuration = totalDuration - transitionDuration * (clipPaths.length - 1)
-
-  // ── 方案一：完整转场（视频 xfade + 音频淡化混合）─────────
-  const complexFilter = buildTransitionFilterComplex({
-    clipCount: clipPaths.length,
-    durations,
-    transitionType,
-    transitionDuration,
-    allHaveAudio,
-    targetW,
-    targetH,
-  })
-
-  console.log('[FFmpeg] 转场合并参数:', {
-    transitionType,
-    transitionDuration,
-    clipCount: clipPaths.length,
-    durations,
-    targetResolution: `${targetW}x${targetH}`,
-    totalDuration: `${totalDuration.toFixed(2)}s`,
-    outputDuration: `${outputDuration.toFixed(2)}s`,
-    allHaveAudio,
-  })
-  console.log('[FFmpeg] filter_complex:\n', complexFilter)
+  // 临时文件目录（使用 outputPath 所在目录）
+  const outputDir = join(outputPath, '..')
+  const tempFiles: string[] = []
 
   try {
-    await runTransitionMerge({ clipPaths, outputPath, complexFilter, allHaveAudio })
-    console.log('[FFmpeg] 完整转场合并成功')
-  } catch (err) {
-    console.warn(`[FFmpeg] 完整转场失败: ${(err as Error).message}`)
-    console.warn('[FFmpeg] 尝试降级方案：仅视频转场 + 音频直接拼接')
+    // 第 1 轮：clip_0 + clip_1 → chunk_000
+    let currentPath: string
 
-    // ── 方案二：仅视频转场，音频用 concat ──────────────────
-    try {
-      safeUnlink(outputPath)
-      const fallbackFilter = buildTransitionFilterComplex({
-        clipCount: clipPaths.length,
-        durations,
-        transitionType,
-        transitionDuration,
-        allHaveAudio: false, // 强制不处理音频（由 concat 负责）
-        targetW,
-        targetH,
-      })
+    console.log(`[FFmpeg] 分块合并开始: ${clipPaths.length} 个片段, 分 ${clipPaths.length - 1} 轮合并`)
 
-      // 音频 concat（直接拼接，无交叉淡化）
-      let fullFallbackFilter = fallbackFilter
-      if (allHaveAudio) {
-        const audioInputs = clipPaths.map((_, i) => `[${i}:a]`).join('')
-        fullFallbackFilter += `;${audioInputs}concat=n=${clipPaths.length}:v=0:a=1[aout]`
-      }
+    const chunk0 = join(outputDir, 'chunk_000.mp4')
+    tempFiles.push(chunk0)
 
-      await runTransitionMerge({
-        clipPaths,
-        outputPath,
-        complexFilter: fullFallbackFilter,
-        allHaveAudio,
-      })
-      console.log('[FFmpeg] 降级方案（仅视频转场）成功')
-    } catch (err2) {
-      console.warn(`[FFmpeg] 降级方案也失败: ${(err2 as Error).message}`)
-      console.warn('[FFmpeg] 最终降级为普通合并（无转场）')
+    currentPath = await mergeTwoClipsWithTransition(
+      clipPaths[0], clipPaths[1], chunk0,
+      transitionType, transitionDuration, targetW, targetH,
+    )
+    console.log(`[FFmpeg] 分块合并 1/${clipPaths.length - 1} 完成`)
 
-      // ── 方案三：普通合并，无任何转场 ─────────────────────
-      safeUnlink(outputPath)
-      return mergeClips(clipPaths, outputPath)
+    // 第 2 轮起：chunk_{i-1} + clip_{i+1} → chunk_i
+    for (let i = 2; i < clipPaths.length; i++) {
+      const chunkFile = join(outputDir, `chunk_${String(i - 1).padStart(3, '0')}.mp4`)
+      tempFiles.push(chunkFile)
+
+      currentPath = await mergeTwoClipsWithTransition(
+        currentPath, clipPaths[i], chunkFile,
+        transitionType, transitionDuration, targetW, targetH,
+      )
+      console.log(`[FFmpeg] 分块合并 ${i}/${clipPaths.length - 1} 完成`)
+    }
+
+    // 将最终结果复制/重命名为 outputPath
+    safeUnlink(outputPath)
+    copyFileSync(currentPath, outputPath)
+
+    console.log(`[FFmpeg] 分块合并全部完成: ${clipPaths.length} 个片段`)
+
+  } finally {
+    // 清理所有中间 temp 文件
+    for (const f of tempFiles) {
+      safeUnlink(f)
     }
   }
 
