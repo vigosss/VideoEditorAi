@@ -1,26 +1,16 @@
 [FFmpeg] 转场合并参数: {
   transitionType: 'fade',
   transitionDuration: 0.5,
-  clipCount: 9,
+  clipCount: 10,
   durations: [
-    5.35, 4.03, 3.34,
-    9.37, 6.01, 7.35,
-     6.7, 6.02,  4.7
-  ]
+    10.52, 10.52, 10.52,
+    10.52, 10.52, 10.52,
+    10.52, 10.52, 10.52,
+      5.6
+  ],
+  totalDuration: '100.28s',
+  outputDuration: '95.78s'
 }
-[FFmpeg] filter_complex: [0:v][1:v]xfade=transition=fade:duration=0.5:offset=4.840[v0];[v0][2:v]xfade=transition=fade:duration=0.5:offset=8.360[v1];[v1][3:v]xfade=transition=fade:duration=0.5:offset=11.190[v2];[v2][4:v]xfade=transition=fade:duration=0.5:offset=20.050[v3];[v3][5:v]xfade=transition=fade:duration=0.5:offset=25.550[v4];[v4][6:v]xfade=transition=fade:duration=0.5:offset=32.390[v5];[v5][7:v]xfade=transition=fade:duration=0.5:offset=38.580[v6];[v6][8:v]xfade=transition=fade:duration=0.5:offset=44.090[vout];[0:a][1:a]acrossfade=d=0.5:c1=tri:c2=tri[a0];[a0][2:a]acrossfade=d=0.5:c1=tri:c2=tri[a1];[a1][3:a]acrossfade=d=0.5:c1=tri:c2=tri[a2];[a2][4:a]acrossfade=d=0.5:c1=tri:c2=tri[a3];[a3][5:a]acrossfade=d=0.5:c1=tri:c2=tri[a4];[a4][6:a]acrossfade=d=0.5:c1=tri:c2=tri[a5];[a5][7:a]acrossfade=d=0.5:c1=tri:c2=tri[a6];[a6][8:a]acrossfade=d=0.5:c1=tri:c2=tri[aout]
-[FFmpeg] 转场合并失败，降级为普通合并: FFmpeg 处理失败: ffmpeg exited with code 1: Error initializing complex filters.
-Invalid argument
-
-[Pipeline] [视频剪辑] 60% (总体 85%) - 已剪辑 2 个片段，正在合并...
-[FFmpeg] 转场合并参数: {
-  transitionType: 'fade',
-  transitionDuration: 0.5,
-  clipCount: 2,
-  durations: [ 42.81, 28.97 ],
-  totalDuration: '71.78s',
-  outputDuration: '71.28s'
-}
-[FFmpeg] filter_complex: [0:v][1:v]xfade=transition=fade:duration=0.5:offset=42.310[vout];[0:a][1:a]acrossfade=d=0.5:c1=tri:c2=tri[aout]
+[FFmpeg] filter_complex: [0:v]fps=fps=30,format=yuv420p,setpts=PTS-STARTPTS[nv0];[0:a]aformat=sample_rates=44100:channel_layouts=stereo:sample_fmts=fltp,asetpts=PTS-STARTPTS[na0];[1:v]fps=fps=30,format=yuv420p,setpts=PTS-STARTPTS[nv1];[1:a]aformat=sample_rates=44100:channel_layouts=stereo:sample_fmts=fltp,asetpts=PTS-STARTPTS[na1];[2:v]fps=fps=30,format=yuv420p,setpts=PTS-STARTPTS[nv2];[2:a]aformat=sample_rates=44100:channel_layouts=stereo:sample_fmts=fltp,asetpts=PTS-STARTPTS[na2];[3:v]fps=fps=30,format=yuv420p,setpts=PTS-STARTPTS[nv3];[3:a]aformat=sample_rates=44100:channel_layouts=stereo:sample_fmts=fltp,asetpts=PTS-STARTPTS[na3];[4:v]fps=fps=30,format=yuv420p,setpts=PTS-STARTPTS[nv4];[4:a]aformat=sample_rates=44100:channel_layouts=stereo:sample_fmts=fltp,asetpts=PTS-STARTPTS[na4];[5:v]fps=fps=30,format=yuv420p,setpts=PTS-STARTPTS[nv5];[5:a]aformat=sample_rates=44100:channel_layouts=stereo:sample_fmts=fltp,asetpts=PTS-STARTPTS[na5];[6:v]fps=fps=30,format=yuv420p,setpts=PTS-STARTPTS[nv6];[6:a]aformat=sample_rates=44100:channel_layouts=stereo:sample_fmts=fltp,asetpts=PTS-STARTPTS[na6];[7:v]fps=fps=30,format=yuv420p,setpts=PTS-STARTPTS[nv7];[7:a]aformat=sample_rates=44100:channel_layouts=stereo:sample_fmts=fltp,asetpts=PTS-STARTPTS[na7];[8:v]fps=fps=30,format=yuv420p,setpts=PTS-STARTPTS[nv8];[8:a]aformat=sample_rates=44100:channel_layouts=stereo:sample_fmts=fltp,asetpts=PTS-STARTPTS[na8];[9:v]fps=fps=30,format=yuv420p,setpts=PTS-STARTPTS[nv9];[9:a]aformat=sample_rates=44100:channel_layouts=stereo:sample_fmts=fltp,asetpts=PTS-STARTPTS[na9];[nv0][nv1]xfade=transition=fade:duration=0.5:offset=10.020[vt0];[na0][na1]acrossfade=d=0.5:c1=tri:c2=tri[at0];[vt0][nv2]xfade=transition=fade:duration=0.5:offset=20.040[vt1];[at0][na2]acrossfade=d=0.5:c1=tri:c2=tri[at1];[vt1][nv3]xfade=transition=fade:duration=0.5:offset=30.060[vt2];[at1][na3]acrossfade=d=0.5:c1=tri:c2=tri[at2];[vt2][nv4]xfade=transition=fade:duration=0.5:offset=40.080[vt3];[at2][na4]acrossfade=d=0.5:c1=tri:c2=tri[at3];[vt3][nv5]xfade=transition=fade:duration=0.5:offset=50.100[vt4];[at3][na5]acrossfade=d=0.5:c1=tri:c2=tri[at4];[vt4][nv6]xfade=transition=fade:duration=0.5:offset=60.120[vt5];[at4][na6]acrossfade=d=0.5:c1=tri:c2=tri[at5];[vt5][nv7]xfade=transition=fade:duration=0.5:offset=70.140[vt6];[at5][na7]acrossfade=d=0.5:c1=tri:c2=tri[at6];[vt6][nv8]xfade=transition=fade:duration=0.5:offset=80.160[vt7];[at6][na8]acrossfade=d=0.5:c1=tri:c2=tri[at7];[vt7][nv9]xfade=transition=fade:duration=0.5:offset=90.180[vout];[at7][na9]acrossfade=d=0.5:c1=tri:c2=tri[aout]
 [FFmpeg] 转场合并失败，降级为普通合并: FFmpeg 处理失败: ffmpeg exited with code 1: Error initializing complex filters.
 Invalid argument
