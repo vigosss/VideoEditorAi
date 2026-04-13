@@ -3,7 +3,7 @@ export const MODEL_OPTIONS = [
   { value: 'GLM-4.6V-FlashX', label: '老兵AI 4.6L' },
   { value: 'GLM-5V-Turbo', label: '老兵AI 5.0T' },
   { value: 'GLM-4.6V', label: '老兵AI 4.6' },
-  { value: 'GLM-4.7-FlashX', label: '老兵AI 4.7L）' },
+  { value: 'GLM-4.7-FlashX', label: '老兵AI 4.7L' },
 ]
 
 /** 模型名称映射（用于详情页展示） */
