@@ -20,6 +20,7 @@ import type { ClipParams } from './ffmpeg'
 import type { AnalyzeVideoOptions } from './glm'
 import type { BeatInfo } from '../../shared/bgm'
 import { getAllSettings } from './database'
+import { getProjectsDir } from '../utils/paths'
 
 // ==========================================
 // 类型定义
@@ -173,7 +174,12 @@ export async function runPipeline(
     const outputName = project.videoPaths && project.videoPaths.length > 1
       ? `${basename(project.name)}_final.mp4`
       : `${basename(workingVideoPath, extname(workingVideoPath))}_final.mp4`
-    const outputPath = join(project.outputPath, outputName)
+    // project.outputPath 为空时回退到默认项目目录，避免输出到工程源码目录
+    const outputDir = project.outputPath || getProjectsDir()
+    if (!existsSync(outputDir)) {
+      mkdirSync(outputDir, { recursive: true })
+    }
+    const outputPath = join(outputDir, outputName)
 
     // ==========================================
     // 步骤: 视频解析
