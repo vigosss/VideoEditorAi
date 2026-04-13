@@ -41,16 +41,27 @@ async function resolveTargetResolution(
   videoPaths: string[],
   outputResolution: string,
 ): Promise<{ width: number; height: number }> {
+  // ★ 关键修复：先检测视频的实际方向（横/竖），再决定输出分辨率
+  // 避免竖屏视频强制输出为横屏，导致左右大量黑边
+  const orientationTarget = await detectTargetResolution(videoPaths)
+  const isPortrait = orientationTarget.height > orientationTarget.width
+
   switch (outputResolution) {
     case '1080p':
-      return { width: 1920, height: 1080 }
+      return isPortrait
+        ? { width: 1080, height: 1920 }
+        : { width: 1920, height: 1080 }
     case '720p':
-      return { width: 1280, height: 720 }
+      return isPortrait
+        ? { width: 720, height: 1280 }
+        : { width: 1280, height: 720 }
     case '480p':
-      return { width: 854, height: 480 }
+      return isPortrait
+        ? { width: 480, height: 854 }
+        : { width: 854, height: 480 }
     case 'original':
     default:
-      return await detectTargetResolution(videoPaths)
+      return orientationTarget
   }
 }
 

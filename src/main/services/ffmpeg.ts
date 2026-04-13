@@ -153,6 +153,31 @@ export async function getVideoInfo(filePath: string): Promise<VideoInfo> {
   // 计算时长
   const duration = data.format.duration ?? 0
 
+  // ★ 检测旋转元数据，修正宽高
+  // 手机竖屏视频可能像素实际编码为横向（如 1920×1080），
+  // 仅靠 rotate 元数据告诉播放器旋转显示为 1080×1920
+  let rotation = 0
+
+  // 方式一：tags.rotate（旧格式，部分安卓机）
+  if (videoStream.tags?.rotate) {
+    rotation = Math.abs(parseInt(videoStream.tags.rotate as string, 10))
+  }
+
+  // 方式二：side_data_list 中的 Display Matrix（iOS / 新格式）
+  if (!rotation && Array.isArray((videoStream as any).side_data_list)) {
+    for (const sd of (videoStream as any).side_data_list) {
+      if (typeof sd.rotation === 'number') {
+        rotation = Math.abs(Math.round(sd.rotation))
+        break
+      }
+    }
+  }
+
+  // 旋转 90° 或 270° 时，实际显示宽高需要互换
+  const needsSwap = rotation === 90 || rotation === 270
+  const displayWidth  = needsSwap ? (videoStream.height ?? 0) : (videoStream.width  ?? 0)
+  const displayHeight = needsSwap ? (videoStream.width  ?? 0) : (videoStream.height ?? 0)
+
   // 计算帧率
   let fps = 30 // 默认值
   if (videoStream.r_frame_rate) {
@@ -174,8 +199,8 @@ export async function getVideoInfo(filePath: string): Promise<VideoInfo> {
 
   return {
     duration: Math.round(duration * 100) / 100,
-    width: videoStream.width ?? 0,
-    height: videoStream.height ?? 0,
+    width: displayWidth,
+    height: displayHeight,
     fps: Math.round(fps * 100) / 100,
     bitrate,
     codec: videoStream.codec_name ?? 'unknown',
@@ -605,14 +630,16 @@ export async function normalizeVideo(
   const probeData = await probeVideo(inputPath)
   const hasAudio = probeData.streams.some(s => s.codec_type === 'audio')
 
-  // scale + pad：等比缩放后用黑边填充到精确目标尺寸
-  const vf = `scale=${targetWidth}:${targetHeight}:force_original_aspect_ratio=decrease,pad=${targetWidth}:${targetHeight}:(ow-iw)/2:(oh-ih)/2:black`
+  // ★ 自动旋转 + 等比缩放 + 黑边填充
+  // autorotate：消费旋转元数据，输出正确方向的帧（解决手机竖屏视频方向问题）
+  // scale+pad：等比缩放后用黑边填充到精确目标尺寸
+  const vf = `autorotate,scale=${targetWidth}:${targetHeight}:force_original_aspect_ratio=decrease,pad=${targetWidth}:${targetHeight}:(ow-iw)/2:(oh-ih)/2:black`
 
   const outputOpts: string[] = [
-    '-preset fast',
-    '-crf 23',
-    '-threads 4',            // 限制线程数，降低内存占用
-    '-x264-params ref=2',    // 减少参考帧，降低内存占用
+    '-preset', 'fast',
+    '-crf', '23',
+    '-threads', '4',            // 限制线程数，降低内存占用
+    '-x264-params', 'ref=2',    // 减少参考帧，降低内存占用
     '-r', String(targetFps),
     '-vf', vf,
     '-pix_fmt', 'yuv420p',
@@ -813,6 +840,7 @@ function buildTransitionFilterComplex(params: {
   for (let i = 0; i < clipCount; i++) {
     filters.push(
       `[${i}:v]` +
+      `autorotate,` +
       `scale=${w}:${h}:force_original_aspect_ratio=decrease,` +
       `pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2:black,` +
       `fps=${XFADE_TARGET_FPS},` +
