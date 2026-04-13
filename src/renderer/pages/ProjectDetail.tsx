@@ -467,7 +467,7 @@ export default function ProjectDetail() {
             >
               <Cpu className="h-4 w-4 text-primary-400" />
               <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                AI 思考过程
+                老兵AI 思考过程
               </span>
               <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                 {thinkingContent.length > 0 && `(${Math.round(thinkingContent.length / 2)}字)`}

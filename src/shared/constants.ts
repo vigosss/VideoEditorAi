@@ -2,21 +2,24 @@
 export const MODEL_OPTIONS = [
   { value: "GLM-5V-Turbo", label: "老兵AI 最新版" },
   { value: "GLM-4.6V", label: "老兵AI 稳定版" },
-  { value: "GLM-4.6V-FlashX", label: "老兵AI 拉垮版" },
+  { value: "GLM-4.6V-FlashX", label: "老兵AI 基础版" },
+  { value: "GLM-4.6V-Flash", label: "老兵AI 拉垮版" },
 ];
 
 /** 模型名称映射（用于详情页展示） */
 export const MODEL_LABEL_MAP: Record<string, string> = {
   "GLM-5V-Turbo": "老兵AI 最新版",
   "GLM-4.6V": "老兵AI 稳定版",
-  "GLM-4.6V-FlashX": "老兵AI 拉垮版",
+  "GLM-4.6V-FlashX": "老兵AI 基础版",
+  "GLM-4.6V-Flash": "老兵AI 拉垮版",
 };
 
 /** GLM 模型 API 标识符映射（代码类型 → API 标识符） */
 export const GLM_MODEL_ID_MAP: Record<string, string> = {
-  "GLM-5V-Turbo": "glm-5v-turbo",
-  "GLM-4.6V": "glm-4.6v",
-  "GLM-4.6V-FlashX": "glm-4.6v-flash",
+  "GLM-5V-Turbo": "GLM-5V-Turbo",
+  "GLM-4.6V": "GLM-4.6V",
+  "GLM-4.6V-FlashX": "GLM-4.6V-FlashX",
+  "GLM-4.6V-Flash": "GLM-4.6V-Flash",
 };
 
 

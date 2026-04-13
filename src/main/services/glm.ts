@@ -173,9 +173,9 @@ async function callGLMApi(
       // 针对 finish_reason: length 提供更友好的错误提示
       let errorMsg = 'API 返回数据格式异常：content 为空'
       if (finishReason === 'length') {
-        errorMsg = 'AI 思考过程过长，导致输出 token 耗尽未生成最终结果。请尝试简化 Prompt 或切换模型后重试。'
+        errorMsg = '老兵AI 思考过程过长，导致输出 token 耗尽未生成最终结果。请尝试简化 Prompt 或切换模型后重试。'
       } else if (finishReason === 'content_filter') {
-        errorMsg = 'AI 响应被内容安全过滤器拦截，请尝试调整 Prompt 内容后重试。'
+        errorMsg = '老兵AI 响应被内容安全过滤器拦截，请尝试调整 Prompt 内容后重试。'
       } else if (finishReason) {
         errorMsg = `API 返回数据异常 (finish_reason: ${finishReason})`
       }
@@ -189,7 +189,7 @@ async function callGLMApi(
       : undefined
 
     if (reasoningContent) {
-      console.log(`[老兵AI] AI 思考过程: ${reasoningContent.substring(0, 200)}...`)
+      console.log(`[老兵AI] 思考过程: ${reasoningContent.substring(0, 200)}...`)
     }
 
     return {
