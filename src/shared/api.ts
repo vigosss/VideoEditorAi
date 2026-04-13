@@ -40,6 +40,13 @@ export interface UpdateError {
   message: string
 }
 
+/** 中间视频文件信息 */
+export interface IntermediateVideo {
+  label: string
+  path: string
+  exists: boolean
+}
+
 /** 暴露给渲染进程的 API */
 export interface ElectronAPI {
   // 项目操作
@@ -60,6 +67,7 @@ export interface ElectronAPI {
   clipVideo: (videoPath: string, clips: Array<{ startTime: number; endTime: number; reason?: string }>, outputDir: string) => Promise<string[]>
   mergeClips: (clipPaths: string[], outputPath: string) => Promise<string>
   embedSubtitles: (videoPath: string, srtPath: string, outputPath: string) => Promise<string>
+  getIntermediateVideos: (projectId: string) => Promise<IntermediateVideo[]>
   onProgress: (callback: (progress: PipelineProgress) => void) => () => void
 
   // 设置

@@ -16,7 +16,46 @@ import {
 import type { ClipParams } from '../services/ffmpeg'
 import { addToQueue, cancelProject, setMainWindow } from '../services/queue'
 import { getProject } from '../services/database'
+import { getProjectWorkDir } from '../services/ffmpeg'
+import { existsSync, statSync } from 'fs'
+import { join } from 'path'
 import { handleWithLog } from '../utils/logger'
+
+/** 中间视频文件信息 */
+interface IntermediateVideo {
+  label: string
+  path: string
+  exists: boolean
+}
+
+/** 获取项目的中间视频文件列表 */
+function getIntermediateVideos(projectId: string): IntermediateVideo[] {
+  const workDir = getProjectWorkDir(projectId)
+  const project = getProject(projectId)
+  const isMultiVideo = project && project.videoPaths && project.videoPaths.length > 1
+
+  const videos: IntermediateVideo[] = []
+
+  // 1. 合并后原视频（仅多视频项目）
+  if (isMultiVideo) {
+    const concatPath = join(workDir, 'concat_input.mp4')
+    videos.push({
+      label: '合并后原视频',
+      path: concatPath,
+      exists: existsSync(concatPath) && statSync(concatPath).size > 0,
+    })
+  }
+
+  // 2. 剪辑后视频（AI剪辑合并，无字幕无BGM）
+  const mergedPath = join(workDir, 'merged.mp4')
+  videos.push({
+    label: '剪辑后视频',
+    path: mergedPath,
+    exists: existsSync(mergedPath) && statSync(mergedPath).size > 0,
+  })
+
+  return videos
+}
 
 export function registerVideoIPC(): void {
   // ==========================================
@@ -111,5 +150,12 @@ export function registerVideoIPC(): void {
     if (!cancelled) {
       throw new Error(`未找到正在处理的项目: ${projectId}`)
     }
+  })
+
+  // ==========================================
+  // 获取中间视频文件列表
+  // ==========================================
+  handleWithLog(IPC_CHANNELS.VIDEO_GET_INTERMEDIATES, async (_event, projectId: string) => {
+    return getIntermediateVideos(projectId)
   })
 }

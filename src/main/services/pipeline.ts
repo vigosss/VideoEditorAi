@@ -4,7 +4,7 @@
 
 import { BrowserWindow } from 'electron'
 import { join, basename, extname } from 'path'
-import { existsSync, readdirSync, unlinkSync, renameSync, statSync, copyFileSync } from 'fs'
+import { existsSync, readdirSync, unlinkSync, renameSync, statSync, copyFileSync, mkdirSync } from 'fs'
 import { IPC_CHANNELS } from '../../shared/ipc'
 import { PIPELINE_STEPS, getActiveSteps } from '../../shared/pipeline'
 import type { PipelineProgress, PipelineStepConfig } from '../../shared/pipeline'
@@ -143,17 +143,26 @@ export async function runPipeline(
     let workingVideoPath = project.videoPath  // 默认工作视频
 
     if (project.videoPaths && project.videoPaths.length > 1) {
-      sendProgress('normalizing', 0, `正在合并 ${project.videoPaths.length} 个视频文件...`)
-      checkCancelled()
-
-      const normalizedDir = join(workDir, 'normalized')
+      // 检查是否已有缓存的合并视频（避免重复合并）
       const concatResultPath = join(workDir, 'concat_input.mp4')
-      workingVideoPath = await normalizeAndConcat(project.videoPaths, normalizedDir, concatResultPath)
+      if (existsSync(concatResultPath) && statSync(concatResultPath).size > 0) {
+        // 缓存命中，直接使用已合并的视频
+        workingVideoPath = concatResultPath
+        updateProject(projectId, { videoPath: workingVideoPath })
+        console.log(`[Pipeline] 使用缓存的合并视频: ${concatResultPath}`)
+        sendProgress('normalizing', 100, `使用已缓存的合并视频 (${project.videoPaths.length} 个文件)`)
+      } else {
+        sendProgress('normalizing', 0, `正在合并 ${project.videoPaths.length} 个视频文件...`)
+        checkCancelled()
 
-      // 更新项目的工作视频路径
-      updateProject(projectId, { videoPath: workingVideoPath })
+        const normalizedDir = join(workDir, 'normalized')
+        workingVideoPath = await normalizeAndConcat(project.videoPaths, normalizedDir, concatResultPath)
 
-      sendProgress('normalizing', 100, `视频合并完成 (${project.videoPaths.length} 个文件)`)
+        // 更新项目的工作视频路径
+        updateProject(projectId, { videoPath: workingVideoPath })
+
+        sendProgress('normalizing', 100, `视频合并完成 (${project.videoPaths.length} 个文件)`)
+      }
     } else {
       // 单视频，跳过合并步骤
       sendProgress('normalizing', 100, '单视频模式，跳过合并')

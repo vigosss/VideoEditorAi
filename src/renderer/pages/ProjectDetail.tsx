@@ -31,7 +31,7 @@ import { Card } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal'
 import { PublishModal } from '../components/PublishModal'
 import { useProjectStore } from '../stores/projectStore'
-import type { Project, ProjectStatus, ProcessingStep, Clip, UploadPlatform, UploadProgress, UploadRecord } from '@shared/types'
+import type { Project, ProjectStatus, ProcessingStep, Clip, UploadPlatform, UploadProgress, UploadRecord, IntermediateVideo } from '@shared/types'
 import type { PipelineProgress } from '@shared/pipeline'
 import { MODEL_LABEL_MAP, ANALYSIS_MODE_LABEL_MAP, AUDIO_MODE_LABEL_MAP, BEAT_SYNC_MODE_LABEL_MAP, TRANSITION_TYPE_LABEL_MAP } from '@shared/constants'
 import { PLATFORM_CONFIGS } from '@shared/platform'
@@ -92,6 +92,9 @@ export default function ProjectDetail() {
   // const [publishPlatform, setPublishPlatform] = useState<UploadPlatform | null>(null)
   // const [uploadProgress, setUploadProgress] = useState<UploadProgress | null>(null)
   // const [uploadRecords, setUploadRecords] = useState<UploadRecord[]>([])
+
+  // 中间视频列表
+  const [intermediateVideos, setIntermediateVideos] = useState<IntermediateVideo[]>([])
 
   // 实时进度状态（本地缓存，不通过 store 刷新）
   const [liveProgress, setLiveProgress] = useState<PipelineProgress | null>(null)
@@ -155,6 +158,16 @@ export default function ProjectDetail() {
 
     return cleanup
   }, [id, fetchProject, loadClips])
+
+  /** 加载中间视频列表（处理完成或失败时） */
+  useEffect(() => {
+    if (!id) return
+    if (currentProject?.status !== 'completed' && currentProject?.status !== 'failed') {
+      setIntermediateVideos([])
+      return
+    }
+    window.electronAPI.getIntermediateVideos(id).then(setIntermediateVideos).catch(() => {})
+  }, [id, currentProject?.status])
 
   /** 处理中的定时轮询（保底机制，每5秒刷新一次） */
   useEffect(() => {
@@ -492,25 +505,85 @@ export default function ProjectDetail() {
 
       {/* 视频预览区域 */}
       <Card title="视频预览">
-        <div
-          className={`flex flex-col items-center justify-center rounded-xl border p-6 ${
-            project.status === 'completed' ? 'cursor-pointer' : ''
-          }`}
-          style={{
-            borderColor: 'var(--border-active)',
-            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05))',
-          }}
-          onClick={() => {
-            if (project.status === 'completed' && project.outputPath) {
-              window.electronAPI.openPath(project.outputPath)
-            }
-          }}
-        >
-          <Play className="mb-2 h-10 w-10 text-primary-400" />
-          <p className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>剪辑后视频</p>
-          <p className="mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-            {project.status === 'completed' ? '点击播放' : '处理完成后可预览'}
-          </p>
+        <div className="space-y-3">
+          {/* 中间视频（合并后原视频、剪辑后视频） */}
+          {intermediateVideos.map((video) => (
+            <div
+              key={video.path}
+              className={`flex items-center gap-3 rounded-xl border p-3 ${
+                video.exists ? 'cursor-pointer' : 'opacity-50'
+              }`}
+              style={{
+                borderColor: 'var(--border-color)',
+                background: 'var(--bg-tertiary)',
+              }}
+              onClick={() => {
+                if (video.exists) {
+                  window.electronAPI.openPath(video.path)
+                }
+              }}
+            >
+              <div
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))',
+                }}
+              >
+                <Play className="h-4 w-4 text-primary-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                  {video.label}
+                </p>
+                <p className="truncate text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  {video.path.split('/').pop() || video.path.split('\\').pop()}
+                </p>
+              </div>
+              <Badge variant={video.exists ? 'success' : 'default'}>
+                {video.exists ? '可播放' : '未生成'}
+              </Badge>
+            </div>
+          ))}
+
+          {/* 最终成片 */}
+          <div
+            className={`flex items-center gap-3 rounded-xl border p-3 ${
+              project.status === 'completed' && project.outputPath ? 'cursor-pointer' : 'opacity-50'
+            }`}
+            style={{
+              borderColor: 'var(--border-active)',
+              background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(139, 92, 246, 0.05))',
+            }}
+            onClick={() => {
+              if (project.status === 'completed' && project.outputPath) {
+                window.electronAPI.openPath(project.outputPath)
+              }
+            }}
+          >
+            <div
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
+              style={{
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2))',
+              }}
+            >
+              <Film className="h-4 w-4 text-primary-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                最终成片
+              </p>
+              <p className="truncate text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                {project.outputPath
+                  ? (project.outputPath.split('/').pop() || project.outputPath.split('\\').pop())
+                  : '处理完成后可预览'}
+              </p>
+            </div>
+            {project.status === 'completed' && project.outputPath ? (
+              <Badge variant="success" dot>已完成</Badge>
+            ) : (
+              <Badge variant="default">未生成</Badge>
+            )}
+          </div>
         </div>
       </Card>
 

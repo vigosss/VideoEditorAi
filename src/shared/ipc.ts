@@ -23,6 +23,7 @@ export const IPC_CHANNELS = {
   VIDEO_MERGE: 'video:merge',
   VIDEO_EMBED_SUBTITLES: 'video:embedSubtitles',
   VIDEO_CHECK_FFMPEG: 'video:checkFfmpeg',
+  VIDEO_GET_INTERMEDIATES: 'video:getIntermediates',
 
   // 设置
   SETTINGS_GET: 'settings:get',
