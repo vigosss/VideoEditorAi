@@ -9,6 +9,7 @@ interface SelectOption {
   value: string
   label: string
   icon?: ReactNode
+  group?: string
 }
 
 interface SelectProps {
@@ -135,39 +136,98 @@ export function Select({
                 }}
               >
                 <div className="max-h-60 overflow-y-auto py-1">
-                  {options.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => {
-                        onChange(option.value)
-                        setOpen(false)
-                      }}
-                      className={clsx(
-                        'flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors duration-150',
-                      )}
-                      style={{
-                        color: option.value === value ? 'var(--color-primary)' : 'var(--text-primary)',
-                        background:
-                          option.value === value
-                            ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05))'
-                            : 'transparent',
-                      }}
-                      onMouseEnter={(e) => {
-                        if (option.value !== value) {
-                          e.currentTarget.style.background = 'var(--bg-tertiary)'
-                        }
-                      }}
-                      onMouseLeave={(e) => {
-                        if (option.value !== value) {
-                          e.currentTarget.style.background = 'transparent'
-                        }
-                      }}
-                    >
-                      {option.icon}
-                      {option.label}
-                    </button>
-                  ))}
+                  {(() => {
+                    // 检查是否有分组选项
+                    const hasGroups = options.some((o) => o.group)
+                    if (!hasGroups) {
+                      // 无分组，直接渲染
+                      return options.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            onChange(option.value)
+                            setOpen(false)
+                          }}
+                          className={clsx(
+                            'flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors duration-150',
+                          )}
+                          style={{
+                            color: option.value === value ? 'var(--color-primary)' : 'var(--text-primary)',
+                            background:
+                              option.value === value
+                                ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05))'
+                                : 'transparent',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (option.value !== value) {
+                              e.currentTarget.style.background = 'var(--bg-tertiary)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (option.value !== value) {
+                              e.currentTarget.style.background = 'transparent'
+                            }
+                          }}
+                        >
+                          {option.icon}
+                          {option.label}
+                        </button>
+                      ))
+                    }
+
+                    // 按分组渲染
+                    const elements: ReactNode[] = []
+                    let lastGroup = ''
+                    for (const option of options) {
+                      if (option.group && option.group !== lastGroup) {
+                        lastGroup = option.group
+                        elements.push(
+                          <div
+                            key={`group-${option.group}`}
+                            className="px-3 pt-2 pb-1 text-xs font-medium"
+                            style={{ color: 'var(--text-tertiary)' }}
+                          >
+                            {option.group}
+                          </div>,
+                        )
+                      }
+                      elements.push(
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => {
+                            onChange(option.value)
+                            setOpen(false)
+                          }}
+                          className={clsx(
+                            'flex w-full items-center gap-2 px-3 py-2 text-sm transition-colors duration-150',
+                          )}
+                          style={{
+                            color: option.value === value ? 'var(--color-primary)' : 'var(--text-primary)',
+                            background:
+                              option.value === value
+                                ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05))'
+                                : 'transparent',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (option.value !== value) {
+                              e.currentTarget.style.background = 'var(--bg-tertiary)'
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (option.value !== value) {
+                              e.currentTarget.style.background = 'transparent'
+                            }
+                          }}
+                        >
+                          {option.icon}
+                          {option.label}
+                        </button>,
+                      )
+                    }
+                    return elements
+                  })()}
                 </div>
               </motion.div>
             )}

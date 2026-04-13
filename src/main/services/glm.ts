@@ -59,12 +59,6 @@ const GLM_API_URL = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
 const REQUEST_TIMEOUT = 120_000 // 120 秒超时
 const MAX_RETRIES = 3
 
-/** 分析模式对应的帧数量限制（与 DEFAULT_SYSTEM_PROMPT 中的片段数建议匹配） */
-const FRAME_LIMITS: Record<AnalysisMode, number> = {
-  quick: 15,
-  standard: 25,
-  deep: 40,
-}
 
 // ==========================================
 // API 调用
@@ -564,15 +558,12 @@ export async function analyzeVideo(
   // 获取系统提示词
   const systemPrompt = options.systemPrompt || settings.systemPrompt || DEFAULT_SYSTEM_PROMPT
 
-  // 帧数量限制
-  const frameLimit = FRAME_LIMITS[analysisMode]
+  console.log(`[GLM] 开始分析: 模型=${modelId}, 分析模式=${analysisMode}`)
+  console.log(`[GLM] 关键帧数量: ${framePaths.length}`)
 
-  console.log(`[GLM] 开始分析: 模型=${modelId}, 分析模式=${analysisMode}, 帧数限制=${frameLimit}`)
-  console.log(`[GLM] 关键帧数量: ${framePaths.length}, 限制后: ${Math.min(framePaths.length, frameLimit)}`)
-
-  // 步骤1: 读取关键帧为 base64
+  // 步骤1: 读取关键帧为 base64（发送全部帧，不限制数量）
   onProgress?.(0, '正在读取关键帧图片...')
-  const base64Images = await readFramesAsBase64(framePaths, frameLimit, onProgress)
+  const base64Images = await readFramesAsBase64(framePaths, framePaths.length, onProgress)
 
   if (base64Images.length === 0) {
     throw new GLMError('没有可用的关键帧图片', 'NO_FRAMES', undefined, false)

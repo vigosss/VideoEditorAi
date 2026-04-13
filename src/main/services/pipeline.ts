@@ -11,7 +11,7 @@ import type { PipelineProgress, PipelineStepConfig } from '../../shared/pipeline
 import type { Project, ProcessingStep } from '../../shared/project'
 
 import { getProject, updateProjectStatus, updateProject, createClips, getClipsByProject, deleteClipsByProject } from './database'
-import { getVideoInfo, extractAudio, extractFrames, clipVideo, mergeClips, mergeClipsWithTransitions, mixAudioStreams, embedSubtitles, getProjectWorkDir, normalizeAndConcat } from './ffmpeg'
+import { getVideoInfo, extractAudio, extractFrames, clipVideo, mergeClips, mergeClipsWithTransitions, mixAudioStreams, embedSubtitles, getProjectWorkDir, normalizeAndConcat, checkXfadeAvailable } from './ffmpeg'
 import { transcribeAudio, isModelDownloaded } from './whisper'
 import { analyzeVideo } from './glm'
 import { getBeatsForTrack, alignClipsToBeats, segmentByBeats } from './beatDetection'
@@ -371,13 +371,22 @@ export async function runPipeline(
     // 合并片段（根据是否有转场效果选择不同方式）
     let mergedResult: string
     if (project.transitionType && project.transitionType !== 'none' && clipPaths.length > 1) {
-      mergedResult = await mergeClipsWithTransitions(
-        clipPaths,
-        mergedPath,
-        project.transitionType,
-        project.transitionDuration,
-      )
-      sendProgress('clipping', 100, `视频剪辑与合并完成（${project.transitionType} 转场）`)
+      // 先检测 FFmpeg 是否支持 xfade 滤镜
+      const xfadeSupported = await checkXfadeAvailable()
+      if (!xfadeSupported) {
+        console.warn('[Pipeline] 当前 FFmpeg 不支持 xfade 滤镜，降级为普通合并')
+        sendProgress('clipping', 65, '当前 FFmpeg 版本不支持转场效果，使用普通合并...')
+        mergedResult = await mergeClips(clipPaths, mergedPath)
+        sendProgress('clipping', 100, '视频剪辑与合并完成（转场不可用，已使用硬切）')
+      } else {
+        mergedResult = await mergeClipsWithTransitions(
+          clipPaths,
+          mergedPath,
+          project.transitionType,
+          project.transitionDuration,
+        )
+        sendProgress('clipping', 100, `视频剪辑与合并完成（${project.transitionType} 转场）`)
+      }
     } else {
       mergedResult = await mergeClips(clipPaths, mergedPath)
       sendProgress('clipping', 100, '视频剪辑与合并完成')
