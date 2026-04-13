@@ -24,6 +24,8 @@ export const IPC_CHANNELS = {
   VIDEO_EMBED_SUBTITLES: 'video:embedSubtitles',
   VIDEO_CHECK_FFMPEG: 'video:checkFfmpeg',
   VIDEO_GET_INTERMEDIATES: 'video:getIntermediates',
+  VIDEO_GET_CLIP_FILES: 'video:getClipFiles',
+  VIDEO_GET_FRAME_FILES: 'video:getFrameFiles',
 
   // 设置
   SETTINGS_GET: 'settings:get',

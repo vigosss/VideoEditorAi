@@ -21,6 +21,8 @@ const api: ElectronAPI = {
   mergeClips: (clipPaths, outputPath) => ipcRenderer.invoke('video:merge', clipPaths, outputPath),
   embedSubtitles: (videoPath, srtPath, outputPath) => ipcRenderer.invoke('video:embedSubtitles', videoPath, srtPath, outputPath),
   getIntermediateVideos: (projectId) => ipcRenderer.invoke('video:getIntermediates', projectId),
+  getProjectClipFiles: (projectId) => ipcRenderer.invoke('video:getClipFiles', projectId),
+  getProjectFrameFiles: (projectId, withDataUrl) => ipcRenderer.invoke('video:getFrameFiles', projectId, withDataUrl),
   onProgress: (callback) => {
     const handler = (_event: Electron.IpcRendererEvent, data: unknown) => {
       callback(data as Parameters<typeof callback>[0])

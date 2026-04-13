@@ -17,7 +17,7 @@ import type { ClipParams } from '../services/ffmpeg'
 import { addToQueue, cancelProject, setMainWindow } from '../services/queue'
 import { getProject } from '../services/database'
 import { getProjectWorkDir } from '../services/ffmpeg'
-import { existsSync, statSync } from 'fs'
+import { existsSync, statSync, readdirSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { handleWithLog } from '../utils/logger'
 
@@ -157,5 +157,86 @@ export function registerVideoIPC(): void {
   // ==========================================
   handleWithLog(IPC_CHANNELS.VIDEO_GET_INTERMEDIATES, async (_event, projectId: string) => {
     return getIntermediateVideos(projectId)
+  })
+
+  // ==========================================
+  // 获取剪辑片段视频文件列表
+  // ==========================================
+  handleWithLog(IPC_CHANNELS.VIDEO_GET_CLIP_FILES, async (_event, projectId: string) => {
+    const workDir = getProjectWorkDir(projectId)
+    const clipsDir = join(workDir, 'clips')
+
+    if (!existsSync(clipsDir)) {
+      return []
+    }
+
+    const files = readdirSync(clipsDir)
+      .filter((f) => f.startsWith('clip_') && f.endsWith('.mp4'))
+      .sort()
+
+    return files.map((fileName, idx) => {
+      const filePath = join(clipsDir, fileName)
+      const stat = existsSync(filePath) ? statSync(filePath) : null
+      return {
+        index: idx + 1,
+        path: filePath,
+        fileName,
+        size: stat ? stat.size : 0,
+        exists: !!stat && stat.size > 0,
+      }
+    })
+  })
+
+  // ==========================================
+  // 获取关键帧图片文件列表
+  // ==========================================
+  handleWithLog(IPC_CHANNELS.VIDEO_GET_FRAME_FILES, async (_event, projectId: string, withDataUrl?: boolean) => {
+    const workDir = getProjectWorkDir(projectId)
+    const framesDir = join(workDir, 'frames')
+
+    if (!existsSync(framesDir)) {
+      return []
+    }
+
+    // 获取项目信息以推算帧时间戳
+    const project = getProject(projectId)
+    const frameIntervals: Record<string, number> = { quick: 5, standard: 3, deep: 2 }
+    const interval = project ? (frameIntervals[project.analysisMode] || 3) : 3
+
+    const files = readdirSync(framesDir)
+      .filter((f) => f.startsWith('frame_') && f.endsWith('.jpg'))
+      .sort()
+
+    return files.map((fileName, idx) => {
+      const filePath = join(framesDir, fileName)
+      const fileExists = existsSync(filePath) && statSync(filePath).size > 0
+
+      const result: {
+        index: number
+        path: string
+        fileName: string
+        timestamp: number
+        exists: boolean
+        dataUrl?: string
+      } = {
+        index: idx + 1,
+        path: filePath,
+        fileName,
+        timestamp: idx * interval,
+        exists: fileExists,
+      }
+
+      // 如果需要 Data URL（用于前端展示），读取文件并转换为 base64
+      if (withDataUrl && fileExists) {
+        try {
+          const buffer = readFileSync(filePath)
+          result.dataUrl = `data:image/jpeg;base64,${buffer.toString('base64')}`
+        } catch {
+          // 读取失败时不设置 dataUrl
+        }
+      }
+
+      return result
+    })
   })
 }

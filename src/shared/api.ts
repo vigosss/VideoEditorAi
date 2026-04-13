@@ -47,6 +47,25 @@ export interface IntermediateVideo {
   exists: boolean
 }
 
+/** 剪辑片段视频文件信息 */
+export interface ClipFileInfo {
+  index: number       // 片段序号（从 1 开始）
+  path: string        // 文件路径
+  fileName: string    // 文件名
+  size: number        // 文件大小（字节）
+  exists: boolean     // 文件是否存在
+}
+
+/** 关键帧图片文件信息 */
+export interface FrameFileInfo {
+  index: number       // 帧序号（从 1 开始）
+  path: string        // 文件路径
+  fileName: string    // 文件名
+  timestamp: number   // 时间戳（秒）
+  exists: boolean     // 文件是否存在
+  dataUrl?: string    // base64 Data URL（用于前端展示）
+}
+
 /** 暴露给渲染进程的 API */
 export interface ElectronAPI {
   // 项目操作
@@ -68,6 +87,8 @@ export interface ElectronAPI {
   mergeClips: (clipPaths: string[], outputPath: string) => Promise<string>
   embedSubtitles: (videoPath: string, srtPath: string, outputPath: string) => Promise<string>
   getIntermediateVideos: (projectId: string) => Promise<IntermediateVideo[]>
+  getProjectClipFiles: (projectId: string) => Promise<ClipFileInfo[]>
+  getProjectFrameFiles: (projectId: string, withDataUrl?: boolean) => Promise<FrameFileInfo[]>
   onProgress: (callback: (progress: PipelineProgress) => void) => () => void
 
   // 设置

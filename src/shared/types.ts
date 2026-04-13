@@ -54,4 +54,4 @@ export type { PipelineProgress } from './pipeline'
 export { IPC_CHANNELS } from './ipc'
 
 // Electron API
-export type { ElectronAPI, FileFilter, UpdateInfo, UpdateProgress, UpdateError, IntermediateVideo } from './api'
+export type { ElectronAPI, FileFilter, UpdateInfo, UpdateProgress, UpdateError, IntermediateVideo, ClipFileInfo, FrameFileInfo } from './api'

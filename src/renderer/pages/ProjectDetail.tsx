@@ -23,6 +23,10 @@ import {
   // ExternalLink,   // 一键发布暂不可用
   FolderOpen,
   Music,
+  Image,
+  Eye,
+  HardDrive,
+  ChevronDown,
 } from 'lucide-react'
 import { Button } from '../components/ui/Button'
 import { Badge } from '../components/ui/Badge'
@@ -31,7 +35,7 @@ import { Card } from '../components/ui/Card'
 import { Modal } from '../components/ui/Modal'
 import { PublishModal } from '../components/PublishModal'
 import { useProjectStore } from '../stores/projectStore'
-import type { Project, ProjectStatus, ProcessingStep, Clip, UploadPlatform, UploadProgress, UploadRecord, IntermediateVideo } from '@shared/types'
+import type { Project, ProjectStatus, ProcessingStep, Clip, UploadPlatform, UploadProgress, UploadRecord, IntermediateVideo, ClipFileInfo, FrameFileInfo } from '@shared/types'
 import type { PipelineProgress } from '@shared/pipeline'
 import { MODEL_LABEL_MAP, ANALYSIS_MODE_LABEL_MAP, AUDIO_MODE_LABEL_MAP, BEAT_SYNC_MODE_LABEL_MAP, TRANSITION_TYPE_LABEL_MAP } from '@shared/constants'
 import { PLATFORM_CONFIGS } from '@shared/platform'
@@ -103,6 +107,15 @@ export default function ProjectDetail() {
   // AI 思考过程（reasoning_content）
   const [thinkingContent, setThinkingContent] = useState<string>('')
   const [showThinking, setShowThinking] = useState(false)
+
+  // 剪辑片段视频文件列表
+  const [clipFiles, setClipFiles] = useState<ClipFileInfo[]>([])
+  // 关键帧图片列表
+  const [frameFiles, setFrameFiles] = useState<FrameFileInfo[]>([])
+  // 关键帧展开状态
+  const [showFrames, setShowFrames] = useState(false)
+  // 关键帧图片放大查看
+  const [previewFrame, setPreviewFrame] = useState<FrameFileInfo | null>(null)
 
   /** 加载剪辑片段 */
   const loadClips = useCallback((projectId: string) => {
@@ -177,6 +190,27 @@ export default function ProjectDetail() {
     }
     window.electronAPI.getIntermediateVideos(id).then(setIntermediateVideos).catch(() => {})
   }, [id, currentProject?.status])
+
+  /** 加载剪辑片段视频文件和关键帧图片（处理完成时） */
+  useEffect(() => {
+    if (!id) return
+    if (currentProject?.status !== 'completed') {
+      setClipFiles([])
+      setFrameFiles([])
+      return
+    }
+    window.electronAPI.getProjectClipFiles(id).then(setClipFiles).catch(() => {})
+    // 关键帧暂不加载 base64，等用户展开时再加载
+  }, [id, currentProject?.status])
+
+  /** 展开关键帧时加载图片 Data URL */
+  useEffect(() => {
+    if (!id || !showFrames) return
+    if (currentProject?.status !== 'completed') return
+    // 仅在未加载或加载为空时请求
+    if (frameFiles.length > 0 && frameFiles.some(f => f.dataUrl)) return
+    window.electronAPI.getProjectFrameFiles(id, true).then(setFrameFiles).catch(() => {})
+  }, [id, showFrames, currentProject?.status])
 
   /** 处理中的定时轮询（保底机制，每5秒刷新一次） */
   useEffect(() => {
@@ -509,43 +543,219 @@ export default function ProjectDetail() {
       {clips.length > 0 && (
         <Card title="AI 剪辑结果" description={`共 ${clips.length} 个片段`}>
           <div className="space-y-3">
-            {clips.map((clip, idx) => (
-              <motion.div
-                key={clip.id}
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.05 }}
-                className="flex items-center gap-4 rounded-xl border p-3"
-                style={{ borderColor: 'var(--border-color)', background: 'var(--bg-tertiary)' }}
-              >
-                <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
-                  style={{
-                    background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))',
-                    color: 'var(--color-primary)',
-                  }}
+            {clips.map((clip, idx) => {
+              const clipFile = clipFiles[idx]
+              return (
+                <motion.div
+                  key={clip.id}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                  className="flex items-center gap-4 rounded-xl border p-3"
+                  style={{ borderColor: 'var(--border-color)', background: 'var(--bg-tertiary)' }}
                 >
-                  {idx + 1}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    <Scissors className="h-3.5 w-3.5 text-primary-400" />
-                    {formatTime(clip.startTime)} — {formatTime(clip.endTime)}
-                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                      ({Math.round(clip.endTime - clip.startTime)}秒)
-                    </span>
+                  <div
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold"
+                    style={{
+                      background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))',
+                      color: 'var(--color-primary)',
+                    }}
+                  >
+                    {idx + 1}
                   </div>
-                  {clip.reason && (
-                    <p className="mt-0.5 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                      {clip.reason}
-                    </p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                      <Scissors className="h-3.5 w-3.5 text-primary-400" />
+                      {formatTime(clip.startTime)} — {formatTime(clip.endTime)}
+                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                        ({Math.round(clip.endTime - clip.startTime)}秒)
+                      </span>
+                    </div>
+                    {clip.reason && (
+                      <p className="mt-0.5 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                        {clip.reason}
+                      </p>
+                    )}
+                  </div>
+                  {/* 片段视频文件操作 */}
+                  {clipFile && clipFile.exists && (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+                        style={{
+                          background: 'rgba(99, 102, 241, 0.1)',
+                          color: 'var(--color-primary)',
+                        }}
+                        onClick={() => window.electronAPI.openPath(clipFile.path)}
+                        title="用系统播放器打开片段视频"
+                      >
+                        <Play className="h-3 w-3" />
+                        播放
+                      </button>
+                      <button
+                        className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-colors"
+                        style={{
+                          background: 'rgba(99, 102, 241, 0.06)',
+                          color: 'var(--text-secondary)',
+                        }}
+                        onClick={() => window.electronAPI.openPath(clipFile.path.split('/').slice(0, -1).join('/'))}
+                        title="打开片段所在目录"
+                      >
+                        <FolderOpen className="h-3 w-3" />
+                      </button>
+                    </div>
                   )}
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              )
+            })}
           </div>
+          {/* 片段视频文件汇总 */}
+          {clipFiles.length > 0 && (
+            <div className="mt-4 flex items-center gap-2 rounded-xl border p-3" style={{ borderColor: 'var(--border-color)', background: 'rgba(99, 102, 241, 0.03)' }}>
+              <HardDrive className="h-4 w-4 text-primary-400" />
+              <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                clips 目录下共 {clipFiles.length} 个视频片段文件
+              </span>
+              <button
+                className="ml-auto rounded-lg px-2.5 py-1 text-xs font-medium transition-colors"
+                style={{ background: 'rgba(99, 102, 241, 0.1)', color: 'var(--color-primary)' }}
+                onClick={() => {
+                  if (clipFiles[0]) {
+                    window.electronAPI.openPath(clipFiles[0].path.split('/').slice(0, -1).join('/'))
+                  }
+                }}
+              >
+                打开目录
+              </button>
+            </div>
+          )}
         </Card>
       )}
+
+      {/* 关键帧预览卡片 */}
+      {project.status === 'completed' && (
+        <Card title="关键帧预览" description="AI 分析时抽取的视频关键帧">
+          <button
+            className="flex w-full items-center gap-2 rounded-xl border p-3 text-left transition-colors"
+            style={{ borderColor: 'var(--border-color)', background: 'var(--bg-tertiary)' }}
+            onClick={() => {
+              setShowFrames(!showFrames)
+              if (!showFrames) {
+                // 首次展开时加载不带图片的文件列表（用于显示数量信息）
+                window.electronAPI.getProjectFrameFiles(id!, false).then((files) => {
+                  if (!frameFiles.length) setFrameFiles(files)
+                }).catch(() => {})
+              }
+            }}
+          >
+            <div
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
+              style={{
+                background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15))',
+              }}
+            >
+              <Image className="h-4 w-4 text-primary-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                {frameFiles.length > 0 ? `${frameFiles.length} 张关键帧` : '查看关键帧图片'}
+              </p>
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                {showFrames ? '点击收起' : '点击展开预览'}
+              </p>
+            </div>
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${showFrames ? 'rotate-180' : ''}`}
+              style={{ color: 'var(--text-tertiary)' }}
+            />
+          </button>
+
+          {/* 关键帧网格 */}
+          {showFrames && frameFiles.length > 0 && (
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              {frameFiles.map((frame) => (
+                <div
+                  key={frame.index}
+                  className="group relative cursor-pointer overflow-hidden rounded-lg border"
+                  style={{ borderColor: 'var(--border-color)' }}
+                  onClick={() => {
+                    if (frame.dataUrl) {
+                      setPreviewFrame(frame)
+                    } else {
+                      window.electronAPI.openPath(frame.path)
+                    }
+                  }}
+                >
+                  {frame.dataUrl ? (
+                    <img
+                      src={frame.dataUrl}
+                      alt={`帧 ${frame.index}`}
+                      className="aspect-video w-full object-cover transition-transform group-hover:scale-105"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div
+                      className="flex aspect-video w-full items-center justify-center"
+                      style={{ background: 'var(--bg-tertiary)' }}
+                    >
+                      {frame.exists ? (
+                        <Loader2 className="h-4 w-4 animate-spin text-primary-400" />
+                      ) : (
+                        <Image className="h-4 w-4" style={{ color: 'var(--text-tertiary)' }} />
+                      )}
+                    </div>
+                  )}
+                  {/* 时间戳标签 */}
+                  <div
+                    className="absolute bottom-0 left-0 right-0 px-1.5 py-0.5 text-center text-[10px] font-medium"
+                    style={{ background: 'rgba(0,0,0,0.6)', color: '#fff' }}
+                  >
+                    {formatTime(frame.timestamp)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
+      {/* 关键帧放大查看弹窗 */}
+      <Modal
+        open={!!previewFrame}
+        onClose={() => setPreviewFrame(null)}
+        title={previewFrame ? `关键帧 #${previewFrame.index} — ${formatTime(previewFrame.timestamp)}` : ''}
+      >
+        {previewFrame?.dataUrl && (
+          <div className="flex flex-col items-center gap-3">
+            <img
+              src={previewFrame.dataUrl}
+              alt={`帧 ${previewFrame.index}`}
+              className="max-h-[70vh] w-auto rounded-lg"
+            />
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => window.electronAPI.openPath(previewFrame.path)}
+              >
+                <Eye className="mr-1 h-3.5 w-3.5" />
+                用系统程序查看
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const dir = previewFrame.path.split('/').slice(0, -1).join('/')
+                  window.electronAPI.openPath(dir)
+                }}
+              >
+                <FolderOpen className="mr-1 h-3.5 w-3.5" />
+                打开所在目录
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       {/* 视频预览区域 */}
       <Card title="视频预览">
