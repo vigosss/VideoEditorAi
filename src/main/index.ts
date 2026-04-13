@@ -3,7 +3,8 @@ import { config as dotenvConfig } from 'dotenv'
 import { join } from 'path'
 dotenvConfig({ path: join(__dirname, '../../.env.local') })
 
-import { app, BrowserWindow, shell, ipcMain } from 'electron'
+import { app, BrowserWindow, shell, ipcMain, protocol, net } from 'electron'
+import { pathToFileURL } from 'url'
 
 const is = {
   dev: !app.isPackaged,
@@ -131,6 +132,12 @@ function createWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
+  // 注册 local-video:// 自定义协议（用于渲染进程播放本地视频）
+  protocol.handle('local-video', (request) => {
+    const filePath = decodeURIComponent(request.url.replace('local-video://', ''))
+    return net.fetch(pathToFileURL(filePath).href)
+  })
+
   // 设置应用用户模型 ID（Windows）
   electronApp.setAppUserModelId('com.vigosss.video-editor-ai')
 
