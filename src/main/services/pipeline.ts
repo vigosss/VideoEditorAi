@@ -266,7 +266,7 @@ export async function runPipeline(
 
     // 检查 API Key
     if (!settings.glmApiKey) {
-      throw new Error('未配置 GLM API Key，请在设置中填写')
+      throw new Error('未配置 老兵AI API Key，请在设置中填写')
     }
 
     // 根据节拍同步模式准备分析选项

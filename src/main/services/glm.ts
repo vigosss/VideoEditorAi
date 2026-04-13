@@ -161,7 +161,7 @@ async function callGLMApi(
 
     if (!content) {
       // 记录完整响应以便诊断
-      console.error('[GLM] API 返回了空 content，完整响应:')
+      console.error('[老兵AI] API 返回了空 content，完整响应:')
       console.error(JSON.stringify(data, null, 2))
 
       const finishReason = choice?.finish_reason
@@ -241,7 +241,7 @@ async function callWithRetry(
       delay = Math.round(delay * (0.75 + Math.random() * 0.5))
 
       console.warn(
-        `[GLM] 请求失败 (尝试 ${attempt + 1}/${MAX_RETRIES + 1})，${(delay / 1000).toFixed(1)}s 后重试: ${lastError.message}`,
+        `[老兵AI] 请求失败 (尝试 ${attempt + 1}/${MAX_RETRIES + 1})，${(delay / 1000).toFixed(1)}s 后重试: ${lastError.message}`,
       )
       onRetry?.(attempt + 1, lastError)
 
@@ -388,7 +388,7 @@ async function readFramesAsBase64(
 
   for (let i = 0; i < selectedPaths.length; i++) {
     if (!existsSync(selectedPaths[i])) {
-      console.warn(`[GLM] 帧图片不存在，跳过: ${selectedPaths[i]}`)
+      console.warn(`[老兵AI] 帧图片不存在，跳过: ${selectedPaths[i]}`)
       continue
     }
 
@@ -646,7 +646,7 @@ export async function validateApiKey(apiKey: string): Promise<boolean> {
     if (response.status === 401) return false
     return response.status !== 401
   } catch (err) {
-    console.warn('[GLM] API Key 验证失败:', (err as Error).message)
+    console.warn('[老兵AI] API Key 验证失败:', (err as Error).message)
     return false
   }
 }
