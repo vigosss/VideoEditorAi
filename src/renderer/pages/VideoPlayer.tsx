@@ -44,6 +44,7 @@ function isVideoFile(fileName: string): boolean {
 }
 
 function formatDuration(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '--:--'
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   const s = Math.floor(seconds % 60)
@@ -531,7 +532,7 @@ export default function VideoPlayer() {
                   onClick={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect()
                     const ratio = (e.clientX - rect.left) / rect.width
-                    if (videoRef.current) {
+                    if (videoRef.current && Number.isFinite(duration) && duration > 0) {
                       videoRef.current.currentTime = ratio * duration
                     }
                   }}
