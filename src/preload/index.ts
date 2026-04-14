@@ -30,6 +30,7 @@ const api: ElectronAPI = {
     ipcRenderer.on('video:progress', handler)
     return () => ipcRenderer.removeListener('video:progress', handler)
   },
+  reRenderClips: (projectId, clips) => ipcRenderer.invoke('video:reRender', projectId, clips),
 
   // 设置
   getSettings: () => ipcRenderer.invoke('settings:get'),

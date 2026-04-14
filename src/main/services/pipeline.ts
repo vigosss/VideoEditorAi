@@ -10,7 +10,7 @@ import { PIPELINE_STEPS, getActiveSteps } from '../../shared/pipeline'
 import type { PipelineProgress, PipelineStepConfig } from '../../shared/pipeline'
 import type { Project, ProcessingStep } from '../../shared/project'
 
-import { getProject, updateProjectStatus, updateProject, createClips, getClipsByProject, deleteClipsByProject } from './database'
+import { getProject, updateProjectStatus, updateProject, createClips, getClipsByProject, deleteClipsByProject, replaceClips } from './database'
 import { getVideoInfo, extractAudio, extractFrames, clipVideo, mergeClips, mergeClipsWithTransitions, mixAudioStreams, embedSubtitles, getProjectWorkDir, normalizeAndConcat, checkXfadeAvailable, detectTargetResolution } from './ffmpeg'
 import { transcribeAudio, isModelDownloaded } from './whisper'
 import { analyzeVideo } from './glm'
@@ -28,6 +28,196 @@ import { getProjectsDir } from '../utils/paths'
 
 /** 管线进度回调 */
 export type PipelineProgressCallback = (progress: PipelineProgress) => void
+
+// ==========================================
+// 重新渲染管线（用户编辑剪辑后，跳过 AI 分析，直接重新剪辑）
+// ==========================================
+
+/**
+ * 使用用户修改后的剪辑片段重新执行剪辑→合并→字幕→混音
+ * @param projectId 项目 ID
+ * @param editedClips 用户编辑后的剪辑片段列表
+ * @param mainWindow BrowserWindow 实例（用于发送进度）
+ */
+export async function runReRenderPipeline(
+  projectId: string,
+  editedClips: Array<{ startTime: number; endTime: number; reason: string }>,
+  mainWindow: BrowserWindow,
+): Promise<string> {
+  console.log(`[ReRenderPipeline] 开始重新渲染项目: ${projectId}`)
+
+  const project = getProject(projectId)
+  if (!project) {
+    throw new Error(`项目不存在: ${projectId}`)
+  }
+
+  if (editedClips.length === 0) {
+    throw new Error('剪辑片段列表不能为空')
+  }
+
+  const settings = getAllSettings()
+  const workDir = getProjectWorkDir(projectId)
+  const clipsDir = join(workDir, 'clips')
+  const mergedPath = join(workDir, 'merged.mp4')
+  const srtPath = join(workDir, 'subtitles.srt')
+
+  // 使用项目的工作视频路径
+  const workingVideoPath = project.videoPath
+  if (!existsSync(workingVideoPath)) {
+    throw new Error(`工作视频文件不存在: ${workingVideoPath}`)
+  }
+
+  // 输出路径
+  const outputName = project.videoPaths && project.videoPaths.length > 1
+    ? `${basename(project.name)}_final.mp4`
+    : `${basename(workingVideoPath, extname(workingVideoPath))}_final.mp4`
+  const outputDir = project.outputPath || getProjectsDir()
+  if (!existsSync(outputDir)) {
+    mkdirSync(outputDir, { recursive: true })
+  }
+  const outputPath = join(outputDir, outputName)
+
+  // 简化的步骤：剪辑 → 合并 → 字幕 → 混音（4 步，各 25%）
+  const totalSteps = 4
+  const sendProgress = (step: number, stepProgress: number, message: string) => {
+    const overallProgress = Math.round(((step - 1) / totalSteps) * 100 + (stepProgress / totalSteps))
+    const progress: PipelineProgress = {
+      step: 'clipping',
+      progress: stepProgress,
+      overallProgress,
+      message: `重新渲染: ${message}`,
+    }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(IPC_CHANNELS.VIDEO_PROGRESS, progress)
+    }
+    updateProjectStatus(projectId, 'processing', 'clipping', overallProgress)
+    console.log(`[ReRenderPipeline] 步骤${step}: ${stepProgress}% (总体 ${overallProgress}%) - ${message}`)
+  }
+
+  try {
+    // 更新状态
+    updateProjectStatus(projectId, 'processing', 'clipping', 0)
+
+    // 步骤1: 获取视频信息
+    sendProgress(1, 10, '正在解析视频信息...')
+    const videoInfo = await getVideoInfo(workingVideoPath)
+    sendProgress(1, 30, `视频时长: ${Math.round(videoInfo.duration)}秒`)
+
+    // 步骤1: 剪辑视频
+    sendProgress(1, 50, '正在剪辑视频...')
+    const clipParams: ClipParams[] = editedClips
+      .map((c) => ({
+        startTime: Math.max(0, c.startTime),
+        endTime: Math.min(c.endTime, videoInfo.duration),
+        reason: c.reason,
+      }))
+      .filter((c) => c.endTime - c.startTime >= 0.1)
+
+    if (clipParams.length === 0) {
+      throw new Error('所有剪辑片段的时间范围无效')
+    }
+
+    const clipPaths = await clipVideo(workingVideoPath, clipParams, clipsDir)
+    sendProgress(1, 100, `已剪辑 ${clipPaths.length} 个片段`)
+
+    // 步骤2: 合并片段
+    sendProgress(2, 0, '正在合并片段...')
+    const mergeResolution = { width: videoInfo.width, height: videoInfo.height }
+    let mergedResult: string
+
+    if (project.transitionType && project.transitionType !== 'none' && clipPaths.length > 1) {
+      const xfadeSupported = await checkXfadeAvailable()
+      if (!xfadeSupported) {
+        mergedResult = await mergeClips(clipPaths, mergedPath)
+      } else {
+        const transitionResult = await mergeClipsWithTransitions(
+          clipPaths, mergedPath,
+          project.transitionType, project.transitionDuration, mergeResolution,
+        )
+        mergedResult = transitionResult.path
+      }
+    } else {
+      mergedResult = await mergeClips(clipPaths, mergedPath)
+    }
+    sendProgress(2, 100, '片段合并完成')
+
+    // 步骤3: 字幕嵌入
+    let videoBeforeAudioMix = mergedResult
+    if (project.needsSubtitles) {
+      sendProgress(3, 0, '正在嵌入字幕...')
+      const subsOutputPath = join(workDir, 'with_subs.mp4')
+      if (existsSync(srtPath) && statSync(srtPath).size > 0) {
+        await embedSubtitles(mergedResult, srtPath, subsOutputPath)
+        videoBeforeAudioMix = subsOutputPath
+        sendProgress(3, 100, '字幕嵌入完成')
+      } else {
+        sendProgress(3, 100, '无字幕文件，跳过')
+      }
+    } else {
+      sendProgress(3, 100, '不需要字幕，跳过')
+    }
+
+    // 步骤4: 音频混音
+    if (project.bgmTrackId && project.audioMode !== 'original') {
+      sendProgress(4, 0, '正在混合背景音乐...')
+      try {
+        const bgmPath = getBgmTrackPath(project.bgmTrackId)
+        await mixAudioStreams(videoBeforeAudioMix, bgmPath, outputPath, {
+          mode: project.audioMode,
+          bgmVolume: project.bgmVolume,
+          originalVolume: project.originalAudioVolume,
+          bgmLoop: true,
+          bgmFadeIn: 1.0,
+          bgmFadeOut: 1.0,
+        })
+        sendProgress(4, 100, '音频混音完成')
+      } catch (err) {
+        console.warn(`[ReRenderPipeline] BGM 混音失败: ${(err as Error).message}`)
+        copyFileSync(videoBeforeAudioMix, outputPath)
+        sendProgress(4, 100, '音频混音失败，已跳过')
+      }
+    } else {
+      copyFileSync(videoBeforeAudioMix, outputPath)
+      sendProgress(4, 100, '无需混音，直接输出')
+    }
+
+    // 更新数据库中的剪辑片段
+    replaceClips(projectId, editedClips)
+
+    // 更新输出路径和项目状态
+    updateProject(projectId, { outputPath })
+    updateProjectStatus(projectId, 'completed', 'completed', 100)
+
+    console.log(`[ReRenderPipeline] 重新渲染完成: ${outputPath}`)
+
+    // 发送完成进度
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(IPC_CHANNELS.VIDEO_PROGRESS, {
+        step: 'completed',
+        progress: 100,
+        overallProgress: 100,
+        message: '重新渲染完成！',
+      } as PipelineProgress)
+    }
+
+    return outputPath
+  } catch (err) {
+    const errorMessage = (err as Error).message
+    updateProjectStatus(projectId, 'failed', 'failed', 0, errorMessage)
+    console.error(`[ReRenderPipeline] 重新渲染失败: ${projectId}`, errorMessage)
+
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.webContents.send(IPC_CHANNELS.VIDEO_PROGRESS, {
+        step: 'failed',
+        progress: 0,
+        overallProgress: 0,
+        message: errorMessage,
+      } as PipelineProgress)
+    }
+
+    throw err
+  }
+}
 
 // ==========================================
 // 分辨率解析工具

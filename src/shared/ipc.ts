@@ -26,6 +26,7 @@ export const IPC_CHANNELS = {
   VIDEO_GET_INTERMEDIATES: 'video:getIntermediates',
   VIDEO_GET_CLIP_FILES: 'video:getClipFiles',
   VIDEO_GET_FRAME_FILES: 'video:getFrameFiles',
+  VIDEO_RE_RENDER: 'video:reRender',
 
   // 设置
   SETTINGS_GET: 'settings:get',

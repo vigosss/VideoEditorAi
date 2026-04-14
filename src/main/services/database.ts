@@ -336,6 +336,21 @@ export function deleteClipsByProject(projectId: string): void {
   database.prepare('DELETE FROM clips WHERE project_id = ?').run(projectId)
 }
 
+/** 替换项目的所有剪辑片段（删除旧的，批量插入新的） */
+export function replaceClips(projectId: string, clips: Array<{ startTime: number; endTime: number; reason: string }>): Clip[] {
+  const database = getDatabase()
+  const transaction = database.transaction(() => {
+    database.prepare('DELETE FROM clips WHERE project_id = ?').run(projectId)
+    const stmt = database.prepare('INSERT INTO clips (id, project_id, start_time, end_time, reason) VALUES (?, ?, ?, ?, ?)')
+    return clips.map((c) => {
+      const id = randomUUID()
+      stmt.run(id, projectId, c.startTime, c.endTime, c.reason)
+      return { id, projectId, startTime: c.startTime, endTime: c.endTime, reason: c.reason }
+    })
+  })
+  return transaction()
+}
+
 /** 获取项目的所有剪辑片段 */
 export function getClipsByProject(projectId: string): Clip[] {
   const database = getDatabase()

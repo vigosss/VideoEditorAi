@@ -17,6 +17,7 @@ import type { ClipParams } from '../services/ffmpeg'
 import { addToQueue, cancelProject, setMainWindow } from '../services/queue'
 import { getProject } from '../services/database'
 import { getProjectWorkDir } from '../services/ffmpeg'
+import { runReRenderPipeline } from '../services/pipeline'
 import { existsSync, statSync, readdirSync, readFileSync } from 'fs'
 import { join } from 'path'
 import { handleWithLog } from '../utils/logger'
@@ -239,4 +240,29 @@ export function registerVideoIPC(): void {
       return result
     })
   })
+
+  // ==========================================
+  // 重新渲染（用户编辑剪辑后重新生成视频）
+  // ==========================================
+  handleWithLog(
+    IPC_CHANNELS.VIDEO_RE_RENDER,
+    async (event, projectId: string, clips: Array<{ startTime: number; endTime: number; reason: string }>) => {
+      // 验证项目存在
+      const project = getProject(projectId)
+      if (!project) {
+        throw new Error(`项目不存在: ${projectId}`)
+      }
+
+      if (!clips || clips.length === 0) {
+        throw new Error('剪辑片段列表不能为空')
+      }
+
+      // 获取 BrowserWindow 实例
+      const win = BrowserWindow.fromWebContents(event.sender)
+
+      // 执行重新渲染管线
+      const outputPath = await runReRenderPipeline(projectId, clips, win!)
+      return outputPath
+    },
+  )
 }

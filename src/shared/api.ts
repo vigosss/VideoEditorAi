@@ -90,6 +90,7 @@ export interface ElectronAPI {
   getProjectClipFiles: (projectId: string) => Promise<ClipFileInfo[]>
   getProjectFrameFiles: (projectId: string, withDataUrl?: boolean) => Promise<FrameFileInfo[]>
   onProgress: (callback: (progress: PipelineProgress) => void) => () => void
+  reRenderClips: (projectId: string, clips: Array<{ startTime: number; endTime: number; reason: string }>) => Promise<string>
 
   // 设置
   getSettings: () => Promise<AppSettings>
