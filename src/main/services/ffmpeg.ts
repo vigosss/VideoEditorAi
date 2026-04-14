@@ -654,8 +654,8 @@ export async function normalizeVideo(
   }
 
   const cmd = ffmpeg()
-    .inputOptions(['-autorotate', '1'])
     .input(inputPath)
+    .inputOptions(['-autorotate', '1'])
     .videoCodec('libx264')
     .outputOptions(outputOpts)
 
