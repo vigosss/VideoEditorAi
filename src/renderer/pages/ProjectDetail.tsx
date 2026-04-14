@@ -26,16 +26,7 @@ export default function ProjectDetail() {
     showFrames,
     setShowFrames,
     intermediateVideos,
-    editingClips,
-    editedClips,
-    reRendering,
-    handleStartEditClips,
-    handleCancelEditClips,
-    updateEditedClip,
-    removeEditedClip,
-    moveEditedClipUp,
-    moveEditedClipDown,
-    handleReRender,
+    clipFiles,
     deleting,
     showDeleteModal,
     setShowDeleteModal,
@@ -101,17 +92,7 @@ export default function ProjectDetail() {
       {/* AI 剪辑结果卡片 */}
       <ClipsCard
         clips={clips}
-        projectStatus={project.status}
-        editingClips={editingClips}
-        editedClips={editedClips}
-        reRendering={reRendering}
-        onStartEdit={handleStartEditClips}
-        onCancelEdit={handleCancelEditClips}
-        onUpdateClip={updateEditedClip}
-        onRemoveClip={removeEditedClip}
-        onMoveUp={moveEditedClipUp}
-        onMoveDown={moveEditedClipDown}
-        onReRender={handleReRender}
+        clipFiles={clipFiles}
       />
 
       {/* 关键帧预览卡片 */}

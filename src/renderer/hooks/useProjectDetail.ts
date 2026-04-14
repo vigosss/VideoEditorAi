@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { useProjectStore } from '../stores/projectStore'
-import type { Clip, IntermediateVideo, FrameFileInfo } from '@shared/types'
+import type { Clip, IntermediateVideo, FrameFileInfo, ClipFileInfo } from '@shared/types'
 import type { PipelineProgress } from '@shared/pipeline'
 
 export function useProjectDetail() {
@@ -33,14 +33,17 @@ export function useProjectDetail() {
   // 关键帧图片放大查看
   const [previewFrame, setPreviewFrame] = useState<FrameFileInfo | null>(null)
 
-  // 剪辑编辑模式
-  const [editingClips, setEditingClips] = useState(false)
-  const [editedClips, setEditedClips] = useState<Array<{ startTime: number; endTime: number; reason: string }>>([])
-  const [reRendering, setReRendering] = useState(false)
+  // 剪辑片段视频文件
+  const [clipFiles, setClipFiles] = useState<ClipFileInfo[]>([])
 
   /** 加载剪辑片段 */
   const loadClips = useCallback((projectId: string) => {
     window.electronAPI.getProjectClips(projectId).then(setClips).catch(() => {})
+  }, [])
+
+  /** 加载剪辑片段视频文件 */
+  const loadClipFiles = useCallback((projectId: string) => {
+    window.electronAPI.getProjectClipFiles(projectId).then(setClipFiles).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -48,7 +51,7 @@ export function useProjectDetail() {
       fetchProject(id)
       loadClips(id)
     }
-  }, [id, fetchProject, loadClips])
+  }, [id, fetchProject, loadClips, loadClipFiles])
 
   /** 监听处理进度 */
   useEffect(() => {
@@ -67,9 +70,11 @@ export function useProjectDetail() {
         toast.success('视频处理完成！')
         fetchProject(id)
         loadClips(id)
+        loadClipFiles(id)
       } else if (progress.step === 'failed') {
         toast.error(progress.message || '处理失败')
         fetchProject(id)
+        loadClipFiles(id)
       }
     })
 
@@ -84,7 +89,8 @@ export function useProjectDetail() {
       return
     }
     window.electronAPI.getIntermediateVideos(id).then(setIntermediateVideos).catch(() => {})
-  }, [id, currentProject?.status])
+    loadClipFiles(id)
+  }, [id, currentProject?.status, loadClipFiles])
 
   /** 展开关键帧时加载图片 Data URL */
   useEffect(() => {
@@ -160,83 +166,6 @@ export function useProjectDetail() {
     }
   }
 
-  /** 进入剪辑编辑模式 */
-  const handleStartEditClips = () => {
-    setEditedClips(clips.map((c) => ({
-      startTime: c.startTime,
-      endTime: c.endTime,
-      reason: c.reason,
-    })))
-    setEditingClips(true)
-  }
-
-  /** 退出编辑模式 */
-  const handleCancelEditClips = () => {
-    setEditingClips(false)
-    setEditedClips([])
-  }
-
-  /** 更新编辑中的片段 */
-  const updateEditedClip = (index: number, field: 'startTime' | 'endTime' | 'reason', value: number | string) => {
-    setEditedClips((prev) => prev.map((c, i) => (i === index ? { ...c, [field]: value } : c)))
-  }
-
-  /** 删除编辑中的片段 */
-  const removeEditedClip = (index: number) => {
-    setEditedClips((prev) => prev.filter((_, i) => i !== index))
-  }
-
-  /** 上移片段 */
-  const moveEditedClipUp = (index: number) => {
-    if (index === 0) return
-    setEditedClips((prev) => {
-      const next = [...prev]
-      ;[next[index - 1], next[index]] = [next[index], next[index - 1]]
-      return next
-    })
-  }
-
-  /** 下移片段 */
-  const moveEditedClipDown = (index: number) => {
-    if (index >= editedClips.length - 1) return
-    setEditedClips((prev) => {
-      const next = [...prev]
-      ;[next[index], next[index + 1]] = [next[index + 1], next[index]]
-      return next
-    })
-  }
-
-  /** 保存并重新渲染 */
-  const handleReRender = async () => {
-    if (!id) return
-    if (editedClips.length === 0) {
-      toast.error('至少需要保留一个剪辑片段')
-      return
-    }
-    // 校验时间有效性
-    for (let i = 0; i < editedClips.length; i++) {
-      const c = editedClips[i]
-      if (c.endTime <= c.startTime) {
-        toast.error(`片段 ${i + 1} 的结束时间必须大于开始时间`)
-        return
-      }
-    }
-    setReRendering(true)
-    setLiveProgress(null)
-    try {
-      await window.electronAPI.reRenderClips(id, editedClips)
-      toast.success('已开始重新渲染')
-      setEditingClips(false)
-      setEditedClips([])
-      fetchProject(id)
-      loadClips(id)
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '重新渲染失败')
-    } finally {
-      setReRendering(false)
-    }
-  }
-
   /** 加载关键帧文件列表（不带图片数据） */
   const loadFrameFileList = () => {
     if (!id) return
@@ -268,17 +197,8 @@ export function useProjectDetail() {
     loadFrameFileList,
     // 中间视频
     intermediateVideos,
-    // 剪辑编辑
-    editingClips,
-    editedClips,
-    reRendering,
-    handleStartEditClips,
-    handleCancelEditClips,
-    updateEditedClip,
-    removeEditedClip,
-    moveEditedClipUp,
-    moveEditedClipDown,
-    handleReRender,
+    // 剪辑片段视频文件
+    clipFiles,
     // 操作
     deleting,
     showDeleteModal,
