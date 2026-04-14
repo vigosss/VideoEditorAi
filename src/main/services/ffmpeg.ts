@@ -633,7 +633,7 @@ export async function normalizeVideo(
   // ★ 自动旋转 + 等比缩放 + 黑边填充
   // autorotate：消费旋转元数据，输出正确方向的帧（解决手机竖屏视频方向问题）
   // scale+pad：等比缩放后用黑边填充到精确目标尺寸
-  const vf = `autorotate,scale=${targetWidth}:${targetHeight}:force_original_aspect_ratio=decrease,pad=${targetWidth}:${targetHeight}:(ow-iw)/2:(oh-ih)/2:black`
+  const vf = `scale=${targetWidth}:${targetHeight}:force_original_aspect_ratio=decrease,pad=${targetWidth}:${targetHeight}:(ow-iw)/2:(oh-ih)/2:black`
 
   const outputOpts: string[] = [
     '-preset', 'fast',
@@ -653,7 +653,9 @@ export async function normalizeVideo(
     outputOpts.push('-map', '0:a:0')  // 只取第一个音频流
   }
 
-  const cmd = ffmpeg(inputPath)
+  const cmd = ffmpeg()
+    .inputOptions(['-autorotate', '1'])
+    .input(inputPath)
     .videoCodec('libx264')
     .outputOptions(outputOpts)
 
@@ -840,7 +842,6 @@ function buildTransitionFilterComplex(params: {
   for (let i = 0; i < clipCount; i++) {
     filters.push(
       `[${i}:v]` +
-      `autorotate,` +
       `scale=${w}:${h}:force_original_aspect_ratio=decrease,` +
       `pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2:black,` +
       `fps=${XFADE_TARGET_FPS},` +
@@ -958,7 +959,7 @@ async function runTransitionMerge(params: {
     const args: string[] = ['-y']
 
     for (const p of clipPaths) {
-      args.push('-i', p)
+      args.push('-autorotate', '1', '-i', p)
     }
 
     // 通过文件传入 filter_complex，而非命令行参数
