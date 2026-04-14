@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3'
 import { randomUUID } from 'crypto'
-import { getDatabasePath, getProjectsDir } from '../utils/paths'
+import { existsSync, rmSync } from 'fs'
+import { getDatabasePath, getProjectsDir, getProjectDir } from '../utils/paths'
 import { encrypt, decrypt } from '../utils/crypto'
 import { DEFAULT_SYSTEM_PROMPT } from '../../shared/constants'
 import type { Project, CreateProjectParams, ProjectStatus, ProcessingStep } from '../../shared/project'
@@ -291,10 +292,16 @@ export function updateProjectStatus(
   `).run(status, currentStep, progress, errorMessage ?? null, completedAt, id)
 }
 
-/** 删除项目（级联删除关联的 clips 和 uploads） */
+/** 删除项目（级联删除关联的 clips 和 uploads，同时删除项目文件夹） */
 export function deleteProject(id: string): void {
   const database = getDatabase()
   database.prepare('DELETE FROM projects WHERE id = ?').run(id)
+
+  // 删除项目在磁盘上的文件夹（含所有中间产物、输出文件等）
+  const projectDir = getProjectDir(id)
+  if (existsSync(projectDir)) {
+    rmSync(projectDir, { recursive: true, force: true })
+  }
 }
 
 // ==========================================
