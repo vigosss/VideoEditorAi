@@ -10,7 +10,6 @@ import {
   ChevronRight,
   LayoutTemplate,
   PlusCircle,
-  Video,
 } from 'lucide-react'
 import { useAppStore } from '../../stores/appStore'
 import { Button } from '../ui/Button'
@@ -19,7 +18,6 @@ const navItems = [
   { to: '/', icon: Home, label: '首页' },
   { to: '/create', icon: PlusCircle, label: '创建项目' },
   { to: '/projects', icon: FolderOpen, label: '项目列表' },
-  { to: '/player', icon: Video, label: '视频播放' },
   { to: '/templates', icon: LayoutTemplate, label: '模板管理' },
   { to: '/settings', icon: Settings, label: '设置' },
 ]

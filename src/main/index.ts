@@ -3,14 +3,7 @@ import { config as dotenvConfig } from 'dotenv'
 import { join } from 'path'
 dotenvConfig({ path: join(__dirname, '../../.env.local') })
 
-import { app, BrowserWindow, shell, ipcMain, protocol } from 'electron'
-import { existsSync } from 'fs'
-import ffmpeg from 'fluent-ffmpeg'
-import { PassThrough } from 'stream'
-import { getFfmpegPath } from './utils/paths'
-
-// 设置 FFmpeg 路径（用于视频转码播放）
-ffmpeg.setFfmpegPath(getFfmpegPath())
+import { app, BrowserWindow, shell, ipcMain } from 'electron'
 
 const is = {
   dev: !app.isPackaged,
@@ -138,73 +131,6 @@ function createWindow(): BrowserWindow {
 }
 
 app.whenReady().then(() => {
-  // 注册 local-video:// 自定义协议（用于渲染进程播放本地视频）
-  // URL 格式：local-video://media/<encodeURIComponent(文件路径)>
-  // 使用 FFmpeg 实时转码为 WebM 格式流式传输，确保 Chromium 可以播放任意视频格式（MP4/MOV/AVI 等）
-  protocol.handle('local-video', (request) => {
-    try {
-      const url = new URL(request.url)
-      const encodedPath = url.pathname.replace(/^\/media\//, '')
-      const filePath = decodeURIComponent(encodedPath)
-
-      if (!filePath || !existsSync(filePath)) {
-        console.error(`[local-video] 文件不存在: ${filePath}`)
-        return new Response('File not found', { status: 404 })
-      }
-
-      return new Promise((resolve) => {
-        const passThrough = new PassThrough({ highWaterMark: 1024 * 1024 })
-
-        const cmd = ffmpeg(filePath)
-          .outputFormat('webm')
-          .outputOptions([
-            '-map', '0:v:0',     // 第一个视频流（必需）
-            '-map', '0:a?',      // 第一个音频流（可选，无音频时不报错）
-            '-c:v', 'libvpx',    // VP8 视频编码
-            '-c:a', 'libvorbis', // Vorbis 音频编码
-            '-deadline', 'realtime', // 实时转码模式，降低延迟
-            '-cpu-used', '5',    // 最快速度（质量稍低，适合预览）
-          ])
-          .on('error', (err) => {
-            console.error('[local-video] FFmpeg 转码错误:', err.message)
-            passThrough.destroy()
-          })
-
-        cmd.pipe(passThrough, { end: true })
-
-        // 将 Node.js Readable 转为 Web ReadableStream
-        const webStream = new ReadableStream({
-          start(controller) {
-            passThrough.on('data', (chunk: Buffer) => controller.enqueue(chunk))
-            passThrough.on('end', () => controller.close())
-            passThrough.on('error', (err) => controller.error(err))
-          },
-          cancel() {
-            // 客户端断开连接时终止 FFmpeg 进程，释放资源
-            try {
-              cmd.kill('SIGKILL')
-            } catch {
-              // 忽略 kill 失败
-            }
-            passThrough.destroy()
-          },
-        })
-
-        resolve(
-          new Response(webStream, {
-            headers: {
-              'Content-Type': 'video/webm',
-              'Cache-Control': 'no-cache',
-            },
-          })
-        )
-      })
-    } catch (err) {
-      console.error('[local-video] 协议处理失败:', err)
-      return new Response('Internal error', { status: 500 })
-    }
-  })
-
   // 设置应用用户模型 ID（Windows）
   electronApp.setAppUserModelId('com.vigosss.video-editor-ai')
 

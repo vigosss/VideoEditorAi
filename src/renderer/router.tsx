@@ -9,7 +9,6 @@ const Projects = lazy(() => import('./pages/Projects'))
 const ProjectDetail = lazy(() => import('./pages/ProjectDetail'))
 const Settings = lazy(() => import('./pages/Settings'))
 const Templates = lazy(() => import('./pages/Templates'))
-const VideoPlayer = lazy(() => import('./pages/VideoPlayer'))
 
 /** 页面加载占位 */
 function PageLoading() {
@@ -71,14 +70,6 @@ export const routes: RouteObject[] = [
         element: (
           <Suspense fallback={<PageLoading />}>
             <Settings />
-          </Suspense>
-        ),
-      },
-      {
-        path: 'player',
-        element: (
-          <Suspense fallback={<PageLoading />}>
-            <VideoPlayer />
           </Suspense>
         ),
       },
