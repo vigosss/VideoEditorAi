@@ -357,7 +357,7 @@ function extractClipsFromArray(arr: unknown[]): GLMClipSegment[] {
       }
     })
     .filter((clip) => clip.endTime > clip.startTime && clip.startTime >= 0)
-    .sort((a, b) => a.startTime - b.startTime)
+    // .sort((a, b) => a.startTime - b.startTime)
 }
 
 /** 用正则从文本中提取时间段（最后兜底） */
